@@ -58,6 +58,15 @@ jobs:
         run: pnpm exec opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion
       - name: Install wrangler v4 (new asset upload API)
         run: npm install -g wrangler@4
+      - name: Worker runtime secrets (SCRAPER / MULERUN / AUTH)
+        env:
+          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
+          MULERUN_API_KEY: ${{ secrets.MULERUN_API_KEY }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        run: |
+          echo "$SCRAPER_API_KEY" | pnpm exec wrangler secret put SCRAPER_API_KEY
+          echo "$MULERUN_API_KEY" | pnpm exec wrangler secret put MULERUN_API_KEY
+          echo "$AUTH_SECRET" | pnpm exec wrangler secret put AUTH_SECRET
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
