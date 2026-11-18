@@ -46,15 +46,15 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec prisma generate
-      - name: Build (with secrets — live search + real leads)
+      - name: Build + package (OpenNext → Cloudflare)
         env:
           SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           MULERUN_API_KEY: ${{ secrets.MULERUN_API_KEY }}
           NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: price_demo_placeholder
           NODE_OPTIONS: --max-old-space-size=6144
-        run: pnpm build
-      - name: Deploy (OpenNext → Cloudflare Workers)
+        run: pnpm exec opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion
+      - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

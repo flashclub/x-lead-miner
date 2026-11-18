@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev --port 3019",
     "dev:edge": "opennextjs-cloudflare preview",
-    "build": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion",
+    "build": "next build",
     "deploy": "opennextjs-cloudflare deploy",
     "start": "next start --port 3019",
     "lint": "next lint",
