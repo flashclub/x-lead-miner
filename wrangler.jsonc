@@ -20,6 +20,11 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  // Workers AI — in-Worker embedding inference for live intent scoring
+  // (bge-base-en-v1.5, 768-d — matches the trained head's input space)
+  "ai": {
+    "binding": "AI"
+  },
   "d1_databases": [
     {
       "binding": "DB",

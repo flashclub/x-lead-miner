@@ -63,12 +63,15 @@ export interface ScoreResult {
   timesSec: number[] | null;
 }
 
-/** Score raw texts via the sidecar. Returns null on any failure. */
+/** Score raw texts. Workers: native via Workers AI + bundled head weights.
+ *  Local dev (Node): falls back to the FastAPI sidecar. Null on failure. */
 export async function scoreTexts(
   texts: string[],
   opts: { timeoutMs?: number; perItem?: boolean } = {}
 ): Promise<ScoreResult | null> {
-  const { timeoutMs = 15_000, perItem = false } = opts;
+  const { timeoutMs = 15_000, perItem = true } = opts;
+  const native = await scoreNative(texts, perItem);
+  if (native) return native;
   const serviceUrl = (await getServerVar('INTENT_SERVICE_URL'))?.replace(/\/$/, '');
   if (!serviceUrl || texts.length === 0) return null;
   try {
@@ -158,6 +161,65 @@ const getCachedLeads = unstable_cache(
 );
 
 /** Sample leads used when live data is unavailable. Never empty overall. */
+/* ---------------- Workers-native scoring ---------------- */
+
+import headWeights from '@/lib/intent-head-weights.json';
+
+/**
+ * Score texts inside the Worker: Workers AI computes bge-base-en-v1.5
+ * embeddings (768-d, the head's input space), then the bundled MLP head
+ * runs the same math as training (L2-norm → ReLU(emb·W1+b1) → sigmoid).
+ * Per-post latency is measured on every call. Returns null when the AI
+ * binding is absent (local `next dev`), so the sidecar takes over.
+ */
+async function scoreNative(
+  texts: string[],
+  perItem: boolean
+): Promise<ScoreResult | null> {
+  try {
+    const { getCloudflareContext } = await import('@opennextjs/cloudflare');
+    const { env } = await getCloudflareContext({ async: true });
+    const ai = (env as { AI?: { run: (model: string, input: unknown) => Promise<unknown> } }).AI;
+    if (!ai) return null;
+    const W = headWeights as {
+      w1: number[][];
+      b1: number[];
+      w2: number[][];
+      b2: number[];
+    };
+    const t0 = Date.now();
+    const scores: number[] = [];
+    const timesSec: number[] = [];
+    for (const text of texts) {
+      const t1 = Date.now();
+      const res = (await ai.run('@cf/baai/bge-base-en-v1.5', {
+        text: text.slice(0, 1500),
+      })) as { data?: number[][]; embeddings?: number[] };
+      const raw = res?.data?.[0] ?? res?.embeddings;
+      if (!Array.isArray(raw)) return null;
+      let norm = 0;
+      for (const v of raw) norm += v * v;
+      norm = Math.sqrt(norm) || 1;
+      const emb = raw.map((v) => v / norm);
+      if (emb.length !== W.w1.length) return null;
+      const hidden = W.b1.map((b, j) => {
+        let acc = b;
+        const row = W.w1[j];
+        for (let i = 0; i < emb.length; i++) acc += emb[i] * row[i];
+        return Math.max(0, acc);
+      });
+      let logit = W.b2[0] ?? 0;
+      for (let j = 0; j < hidden.length; j++) logit += hidden[j] * W.w2[0][j];
+      scores.push(1 / (1 + Math.exp(-logit)));
+      timesSec.push((Date.now() - t1) / 1000);
+    }
+    void perItem;
+    return { scores, elapsedSec: (Date.now() - t0) / 1000, timesSec };
+  } catch {
+    return null; // native path unavailable/broken — sidecar fallback
+  }
+}
+
 export const SAMPLE_LEADS: ScoredLead[] = [
   { handle: '@buildwithsara', text: 'looking for a cheaper alternative to Ahrefs…', score: 91 },
   { handle: '@opsbyjake', text: 'wish an app auto-reconciled Stripe payouts', score: 87 },
