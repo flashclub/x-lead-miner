@@ -35,6 +35,8 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     needs: build
     runs-on: ubuntu-latest
+    # secrets live in the repo's "dev" environment (added 2026-11-17)
+    environment: dev
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
