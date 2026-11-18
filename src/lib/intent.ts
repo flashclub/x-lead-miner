@@ -201,7 +201,7 @@ async function scoreNative(
       for (const v of raw) norm += v * v;
       norm = Math.sqrt(norm) || 1;
       const emb = raw.map((v) => v / norm);
-      if (emb.length !== W.w1.length) return null;
+      if (emb.length !== W.w1[0]?.length) return null; // emb=768 vs row width
       const hidden = W.b1.map((b, j) => {
         let acc = b;
         const row = W.w1[j];
