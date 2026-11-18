@@ -1,0 +1,42 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+  // Do NOT set `output` — @opennextjs/cloudflare patches the default client location.
+}
+
+datasource db {
+  // Cloudflare D1 is SQLite-compatible.
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Application user. Created on first OAuth sign-in (see auth.ts signIn callback).
+///
+/// Single-table design: this row also carries the Stripe billing columns that
+/// were previously a separate StripeCustomer table. They are NULL until the
+/// user completes their first checkout, at which point the webhook fills them in.
+///
+/// Physical table name is per-project (`<slug>_user`) via @@map below; the
+/// placeholder is replaced by the MonoBoard scaffolder so every SaaS project
+/// in the shared `saas` D1 database owns an isolated baseline user table. A
+/// project may add one project-prefixed business table without further approval;
+/// creating a third or later table requires explicit user approval.
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String?
+  image             String?
+  emailVerified     DateTime?
+  /// Stripe customer id. NULL until the first successful checkout. Unique so the
+  /// webhook can upsert by it idempotently.
+  stripeCustomerId  String?   @unique
+  /// "free" | "pro". Default "free" until checkout. Kept in sync by the webhook.
+  subscriptionPlan  String?
+  /// "active" | "trialing" | "past_due" | "canceled" | "incomplete".
+  subscriptionStatus String?
+  currentPeriodEnd  DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("x_lead_miner_user")
+}

@@ -1,0 +1,195 @@
+import http from 'node:http';
+
+import { unstable_cache } from 'next/cache';
+
+import { getServerVar } from './server-env';
+import { XApiClient, type XPost } from './x-api';
+
+/**
+ * Shared intent-sidecar plumbing.
+ *
+ * The local PyTorch sidecar (intent/serve.py) must be reached over a raw
+ * socket: the dev shell exports http_proxy (Clash) and Next's fetch honors
+ * it without respecting NO_PROXY, so loopback calls were tunneled to the
+ * remote proxy node and closed ("other side closed"). node:http never
+ * consults proxy env vars.
+ */
+
+export function sidecarPost(
+  serviceUrl: string,
+  body: unknown,
+  timeoutMs: number
+): Promise<{ status: number; data: unknown }> {
+  // Tolerate scheme-less values like "127.0.0.1:5019" — new URL() throws on
+  // them (a scheme cannot start with a digit) and the failure was silent.
+  const normalized = /^https?:\/\//.test(serviceUrl) ? serviceUrl : `http://${serviceUrl}`;
+  const url = new URL(normalized);
+  const payload = JSON.stringify(body);
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      {
+        hostname: url.hostname,
+        port: url.port,
+        path: '/score',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+        },
+        timeout: timeoutMs,
+      },
+      (res) => {
+        let raw = '';
+        res.on('data', (chunk) => (raw += chunk));
+        res.on('end', () => {
+          try {
+            resolve({ status: res.statusCode ?? 0, data: JSON.parse(raw) });
+          } catch {
+            reject(new Error(`sidecar returned non-JSON: ${raw.slice(0, 120)}`));
+          }
+        });
+      }
+    );
+    req.on('timeout', () => req.destroy(new Error('sidecar timeout')));
+    req.on('error', reject);
+    req.end(payload);
+  });
+}
+
+export interface ScoreResult {
+  scores: number[];
+  elapsedSec: number | null;
+  /** per-text model latency in seconds — present when per_item=true */
+  timesSec: number[] | null;
+}
+
+/** Score raw texts via the sidecar. Returns null on any failure. */
+export async function scoreTexts(
+  texts: string[],
+  opts: { timeoutMs?: number; perItem?: boolean } = {}
+): Promise<ScoreResult | null> {
+  const { timeoutMs = 15_000, perItem = false } = opts;
+  const serviceUrl = (await getServerVar('INTENT_SERVICE_URL'))?.replace(/\/$/, '');
+  if (!serviceUrl || texts.length === 0) return null;
+  try {
+    const { status, data } = await sidecarPost(serviceUrl, { texts, per_item: perItem }, timeoutMs);
+    if (status < 200 || status >= 300) return null;
+    const payload = data as { scores?: unknown; times_sec?: unknown; elapsed_sec?: unknown };
+    const scores = payload.scores;
+    const elapsed = payload.elapsed_sec;
+    const times = payload.times_sec;
+    if (!Array.isArray(scores) || scores.length !== texts.length) return null;
+    return {
+      scores: scores.map((v) => (typeof v === 'number' ? v : 0)),
+      elapsedSec: typeof elapsed === 'number' ? elapsed : null,
+      timesSec: Array.isArray(times)
+        ? times.map((v) => (typeof v === 'number' ? v : 0))
+        : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Attach intent scores from the sidecar. Any failure degrades silently. */
+export async function attachIntentScores(posts: XPost[]): Promise<XPost[]> {
+  const serviceUrl = (await getServerVar('INTENT_SERVICE_URL'))?.replace(/\/$/, '');
+  if (!serviceUrl || posts.length === 0) return posts;
+  try {
+    const { status, data } = await sidecarPost(serviceUrl, { texts: posts.map((p) => p.text) }, 15_000);
+    if (status < 200 || status >= 300) return posts;
+    const scores = (data as { scores?: unknown }).scores;
+    if (!Array.isArray(scores) || scores.length !== posts.length) return posts;
+    return posts.map((post, index) => ({
+      ...post,
+      intentScore: typeof scores[index] === 'number' ? scores[index] : undefined,
+    }));
+  } catch {
+    return posts;
+  }
+}
+
+export interface ScoredLead {
+  handle: string;
+  text: string;
+  score: number;
+}
+
+/**
+ * One live X search + intent scoring pass. Throws on failure — the caller
+ * (the unstable_cache wrapper below) must never see a silent [] because
+ * unstable_cache caches empty results too, which would pin the landing page
+ * to samples for a whole revalidate window (verified 2026-11-16).
+ */
+async function fetchScoredLeads(query: string): Promise<ScoredLead[]> {
+  const apiKey = await getServerVar('SCRAPER_API_KEY');
+  if (!apiKey) throw new Error('SCRAPER_API_KEY is not configured');
+  const client = new XApiClient({ apiKey });
+  const page = await client.search(query, { searchType: 'Latest' });
+  const scored = await attachIntentScores(page.posts.slice(0, 40));
+  const eligible = scored
+    .filter((p) => typeof p.intentScore === 'number' && p.text.length >= 12)
+    .map((p) => ({
+      handle: `@${p.author.handle || 'user'}`,
+      text: p.text.replace(/\s+/g, ' ').slice(0, 90),
+      score: Math.round((p.intentScore as number) * 100),
+    }));
+  // Balanced across score tiers so every bin in the landing animation has
+  // members — a first-come selection starves the strong-intent bin for long
+  // stretches because real posts mostly score mid/low (verified 2026-11-16).
+  const byTier = (lo: number, hi: number, n: number) =>
+    eligible.filter((l) => l.score >= lo && l.score < hi).slice(0, n);
+  return [...byTier(80, 101, 8), ...byTier(60, 80, 6), ...byTier(0, 60, 4)];
+}
+
+/** Landing-page leads, cached 30 min — one search API pass per revalidate.
+ *  A run with too few scored leads throws instead of returning [], so
+ *  transient outages are never cached. */
+const getCachedLeads = unstable_cache(
+  async (query: string) => {
+    const leads = await fetchScoredLeads(query);
+    if (leads.length < 6) {
+      throw new Error(`only ${leads.length} scored leads — not caching a thin result`);
+    }
+    return leads;
+  },
+  ['pipeline-leads'],
+  { revalidate: 1800 }
+);
+
+/** Sample leads used when live data is unavailable. Never empty overall. */
+export const SAMPLE_LEADS: ScoredLead[] = [
+  { handle: '@buildwithsara', text: 'looking for a cheaper alternative to Ahrefs…', score: 91 },
+  { handle: '@opsbyjake', text: 'wish an app auto-reconciled Stripe payouts', score: 87 },
+  { handle: '@saasdad', text: 'our ticketing stack is a mess, willing to pay', score: 89 },
+  { handle: '@indiemarla', text: 'any tool that turns X Spaces into blog posts?', score: 84 },
+  { handle: '@nocodegen', text: 'is there an app that turns Figma into React?', score: 82 },
+  { handle: '@growthlena', text: 'hate how our CRM dedupes. any alternative?', score: 78 },
+  { handle: '@deckhacker', text: 'need a tool to track competitor pricing weekly', score: 63 },
+  { handle: '@revenuekit', text: 'anyone know an app for invoice milestones?', score: 58 },
+  { handle: '@moarmetrics', text: 'my analytics stack needs cleanup, any recs?', score: 55 },
+  { handle: '@shipfast_ed', text: 'is there a bot that replies to reviews for me?', score: 51 },
+  { handle: '@lonelaunch', text: 'who else refreshing Product Hunt all day', score: 21 },
+  { handle: '@notionfanatic', text: 'spending sunday reorganizing my workspace lol', score: 12 },
+];
+
+/**
+ * Real scored leads for the landing pipeline. Falls back to samples when
+ * the scraper key, the X API or the intent sidecar are unavailable, so the
+ * marketing page never breaks.
+ */
+export async function getPipelineLeads(): Promise<{ leads: ScoredLead[]; live: boolean }> {
+  const query = '"is there an app that" OR "anyone recommend" lang:en -filter:replies';
+  try {
+    const leads = await getCachedLeads(query);
+    return { leads, live: true };
+  } catch (error) {
+    // Observability for the silent degradation — the page discloses samples
+    // via labels.sampleNote; the log says WHY.
+    console.warn(
+      '[pipeline] falling back to sample leads:',
+      error instanceof Error ? error.message : error
+    );
+  }
+  return { leads: SAMPLE_LEADS, live: false };
+}

@@ -1,0 +1,30 @@
+/*
+ * Theme: tide — deep sea floor with cyan bioluminescence.
+ * Switch by editing the import in src/app/globals.css or re-scaffolding
+ * with `--theme tide`.
+ */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #061019;
+  --surface: #0b1a26;
+  --surface-2: #102331;
+  --border: #1b3040;
+  --border-strong: #2d4d62;
+
+  --text: #e2f1f7;
+  --text-muted: #93b3c2;
+  --text-subtle: #648394;
+
+  --accent: #22d3ee;
+  --accent-fg: #052730;
+  --accent-soft: rgba(34, 211, 238, 0.13);
+  --glow: 34 211 238;
+
+  --hero-glow-image:
+    radial-gradient(ellipse 75% 50% at 30% -10%, rgba(34, 211, 238, 0.22), transparent 60%),
+    radial-gradient(ellipse 55% 40% at 85% -15%, rgba(59, 130, 246, 0.12), transparent 55%);
+  --hero-glow-animation: hero-drift 20s ease-in-out infinite alternate;
+  --hero-grid-image: none;
+}

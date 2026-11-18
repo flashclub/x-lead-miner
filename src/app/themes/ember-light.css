@@ -1,0 +1,31 @@
+/*
+ * Theme: ember-light — warm paper daylight, same amber accent as ember.
+ * This is the default palette (:root). ember.css activates under
+ * html[data-theme='dark'] (flipped by the header ThemeToggle and persisted
+ * in localStorage; layout.tsx restores the saved choice before first paint).
+ */
+
+:root {
+  color-scheme: light;
+
+  --bg: #faf7f2;
+  --surface: #ffffff;
+  --surface-2: #f3ede4;
+  --border: #e6dccc;
+  --border-strong: #c6b39b;
+
+  --text: #221a12;
+  --text-muted: #655a4b;
+  --text-subtle: #8f8070;
+
+  --accent: #d97706;
+  --accent-fg: #2a1600;
+  --accent-soft: rgba(217, 119, 6, 0.12);
+  --glow: 217 119 6;
+
+  --hero-glow-image:
+    radial-gradient(ellipse 80% 50% at 30% -10%, rgba(245, 158, 11, 0.22), transparent 60%),
+    radial-gradient(ellipse 55% 40% at 78% -15%, rgba(239, 68, 68, 0.1), transparent 55%);
+  --hero-glow-animation: hero-drift 18s ease-in-out infinite alternate;
+  --hero-grid-image: none;
+}

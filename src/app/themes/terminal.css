@@ -1,0 +1,31 @@
+/*
+ * Theme: terminal — near-black with neon green and a faint engineering grid.
+ * Switch by editing the import in src/app/globals.css or re-scaffolding
+ * with `--theme terminal`.
+ */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #050807;
+  --surface: #0a0f0d;
+  --surface-2: #0f1714;
+  --border: #1a2621;
+  --border-strong: #2b4237;
+
+  --text: #d8f3e6;
+  --text-muted: #86a99a;
+  --text-subtle: #5c7d6f;
+
+  --accent: #4ade80;
+  --accent-fg: #052e16;
+  --accent-soft: rgba(74, 222, 128, 0.12);
+  --glow: 74 222 128;
+
+  --hero-glow-image: radial-gradient(ellipse 70% 45% at 50% -10%, rgba(74, 222, 128, 0.14), transparent 60%);
+  --hero-glow-animation: none;
+  --hero-grid-image:
+    linear-gradient(rgba(74, 222, 128, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74, 222, 128, 0.07) 1px, transparent 1px);
+  --hero-grid-size: 44px 44px;
+}

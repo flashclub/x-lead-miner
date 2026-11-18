@@ -1,0 +1,6 @@
+# Intent model pipeline. collect.py runs on the stdlib alone; the rest
+# needs these. On a 16GB MacBook install CPU torch; on AutoDL use CUDA.
+torch>=2.3
+sentence-transformers>=3.0
+fastapi>=0.111
+uvicorn>=0.30

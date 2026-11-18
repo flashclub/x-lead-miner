@@ -1,0 +1,219 @@
+{
+  "metadata": {
+    "title": "X Lead Miner——在 X 上抢先找到买家",
+    "description": "X Lead Miner 全天候监听 X 上带购买意向的帖子，汇成打分排序的线索队列。为创始人、自由职业者和销售团队而建。"
+  },
+  "landing": {
+    "badge": "早期开发中",
+    "heroTitle": "在竞争对手之前，先在 X 上找到买家",
+    "heroSubtitle": "X Lead Miner 全天候监听 X 上带有购买意向的帖子——求推荐、比价、吐槽竞品——把它们汇成打分排序的线索队列。为创始人、自由职业者和销售团队而建。",
+    "ctaPrimary": "抢先体验",
+    "ctaSecondary": "查看定价",
+    "navPricing": "定价",
+    "signIn": "登录",
+    "how": {
+      "title": "工作原理",
+      "subtitle": "从几个关键词，到一队列准备下单的人。",
+      "steps": [
+        {
+          "title": "描述你的市场",
+          "body": "添加买家在采购时会输入的关键词：产品品类、竞品名称，以及「anyone recommend」「alternative to」这类短语。"
+        },
+        {
+          "title": "矿机持续盯守",
+          "body": "你的搜索持续跑在 X 公开帖上，过滤噪音和机器人，让真实的购买信号浮出水面。"
+        },
+        {
+          "title": "处理队列，而不是刷信息流",
+          "body": "命中结果进入按意向排序的队列，附带帖子、作者和命中原因。去 X 回复、标记已处理、继续下一条。"
+        }
+      ]
+    },
+    "features": {
+      "title": "只挖意向，不挖噪音",
+      "subtitle": "把 X 的信息洪流变成一条能用的销售管线。",
+      "items": [
+        {
+          "title": "意向优先的监听",
+          "body": "追踪买家真正会输入的短语——「anyone recommend」「alternative to」「worth paying for」——而不是干等品牌被提到。"
+        },
+        {
+          "title": "线索打分",
+          "body": "每条命中按意向强度、作者信号和新鲜度排序，最热的帖子始终排在队列顶部。"
+        },
+        {
+          "title": "抢在讨论沉掉之前收到提醒",
+          "body": "每日摘要加上高意向命中实时提醒，趁你的回复还能被看见时触达买家。"
+        },
+        {
+          "title": "竞品雷达",
+          "body": "监听竞品名称，在用户准备切换的那一刻，把他们抓个正着。"
+        }
+      ]
+    },
+    "pricing": {
+      "title": "定价",
+      "subtitle": "免费开始，用了上瘾再升级。",
+      "popular": "热门",
+      "free": {
+        "features": [
+          "1 个保存的搜索",
+          "每月 20 条打分线索",
+          "每日摘要邮件"
+        ]
+      },
+      "pro": {
+        "features": [
+          "无限保存的搜索",
+          "无限打分线索",
+          "实时提醒",
+          "竞品雷达"
+        ]
+      },
+      "upgrade": "升级到 Pro",
+      "startFree": "免费开始"
+    },
+    "faq": {
+      "title": "常见问题",
+      "items": [
+        {
+          "question": "什么算一条线索？",
+          "answer": "任何命中你的保存搜索、并且高过意向阈值的 X 公开帖——典型如求推荐、比较方案、吐槽在用产品的帖子。"
+        },
+        {
+          "question": "读取哪些 X 数据？",
+          "answer": "只读公开帖子，经官方 X API。绝不读取私密账号和私信，也绝不代你向 X 发任何内容。"
+        },
+        {
+          "question": "会替我自动回复线索吗？",
+          "answer": "不会。你拿到的是帖子、作者和命中原因——回复永远由你亲手写。手写回复转化更好，也能保住账号健康度。"
+        },
+        {
+          "question": "和 X 自带搜索或保存的提醒有什么区别？",
+          "answer": "X 搜索要你每次手动输入查询、在噪音里挖。X Lead Miner 让搜索常驻运行、给每条命中打分，只把值得回复的帖子递到你面前。"
+        }
+      ]
+    },
+    "footerRight": "© 2026 · 早期开发中",
+    "pipeline": {
+      "model": "意图模型",
+      "modelSub": "本地推理",
+      "queue": "打分排序后的线索",
+      "statScored": "条真实线索已入池",
+      "statQualified": "次打分入档",
+      "aria": "动画：X 上的原始帖子从左侧线索池流出，经中央意图模型打分，高意向线索以分数排序后在右侧堆叠成队列，低分帖子被过滤掉。",
+      "scoringHint": "打分中… 达到意向阈值即进入队列",
+      "binHigh": "强意向 · score ≥ 80",
+      "binMid": "中意向 · 60–79",
+      "binLow": "待观察 · < 60",
+      "emptyBin": "暂无线索进入该档",
+      "input": "搜索关键词",
+      "hitSuffix": "条命中",
+      "binCountSuffix": "条",
+      "sampleNote": "示例数据——实时挖掘暂不可用"
+    }
+  },
+  "login": {
+    "title": "登录 X Lead Miner",
+    "subtitle": "选择登录方式继续。",
+    "devButton": "直接进入仪表盘（开发免登录）",
+    "github": "使用 GitHub 登录",
+    "google": "使用 Google 登录"
+  },
+  "shell": {
+    "signOut": "退出登录",
+    "devBypass": "开发免登录"
+  },
+  "nav": {
+    "search": "线索搜索",
+    "chat": "聊天",
+    "intent": "意图实验室",
+    "billing": "账单"
+  },
+  "themeToggle": {
+    "label": "切换明暗主题"
+  },
+  "leadSearch": {
+    "title": "线索搜索",
+    "subtitle": "挖掘 X 公开帖中的购买意向。X 高级操作符直接透传：精确「短语」、lang:en、-filter:replies、since:YYYY-MM-DD。",
+    "placeholder": "例如：\"anyone recommend\" plumber lang:en",
+    "search": "挖掘",
+    "searching": "挖掘中…",
+    "ordering": "结果排序",
+    "tryLabel": "试一下：",
+    "empty": "没有命中的帖子。放宽短语或去掉一个过滤器，再搜一次。",
+    "loadMore": "加载更多",
+    "loadingMore": "加载中…",
+    "failedPrefix": "搜索失败：",
+    "requestFailed": "搜索请求失败——dev server 在跑吗？",
+    "followers": "粉丝",
+    "verified": "认证",
+    "scoreTitle": "购买意向分，来自本地 PyTorch 模型（intent/）",
+    "favs": "赞",
+    "replies": "回复",
+    "views": "浏览",
+    "openOnX": "去 X 查看 ↗",
+    "minutesAgo": "{n} 分钟前",
+    "hoursAgo": "{n} 小时前",
+    "daysAgo": "{n} 天前",
+    "scoringTime": "模型打分耗时 {sec}s",
+    "scoringInProgress": "模型打分中…",
+    "scoreTimeTitle": "单条打分耗时（秒，精确到小数点后 4 位）"
+  },
+  "chat": {
+    "title": "聊天",
+    "subtitle": "向线索挖掘助手提问——它懂 X 搜索操作符和购买意向信号。可以粘贴一条帖子让它分析。",
+    "emptyHint": "问搜索语句、意向信号，或粘贴一条帖子来分析。",
+    "starter1": "帮我写一条 X 搜索语句，找想把 HubSpot 换掉的人。",
+    "starter2": "挖掘 SaaS 线索时，应该盯哪些购买意向信号？",
+    "starter3": "给这条帖子评估购买意向：「我们的客服系统太慢了，可能要换一个」",
+    "placeholder": "给助手发消息…（Enter 发送，Shift+Enter 换行）",
+    "send": "发送",
+    "clear": "清空",
+    "thinking": "思考中…",
+    "failedPrefix": "发送失败：",
+    "requestFailed": "聊天请求失败——dev server 在跑吗？"
+  },
+  "intent": {
+    "title": "意图实验室",
+    "subtitle": "线索打分背后的 PyTorch 模型：冻结句向量 + 一个小分类头。管线代码在 intent/ 目录。",
+    "collect": {
+      "title": "采集",
+      "detail": "从 X API 拉取意向桶和噪音桶，按推文 id 去重。",
+      "command": "python3 intent/collect.py"
+    },
+    "label": {
+      "title": "标注（LLM 老师）",
+      "detail": "MuleRun LLM 标注购买意向；训练前先人工抽查一批。",
+      "command": "python3 intent/label.py --limit 50"
+    },
+    "train": {
+      "title": "训练分类头",
+      "detail": "冻结句向量（默认 embeddinggemma-2，2026-10）→ MLP dim-64-1 → holdout 上的 precision@k。",
+      "command": "python3 intent/train.py"
+    },
+    "serve": {
+      "title": "推理服务",
+      "detail": "FastAPI 跑在 127.0.0.1:5019；配置后线索搜索会逐页调用打分。",
+      "command": "python3 intent/serve.py"
+    },
+    "notStarted": "未开始",
+    "posts": "{n} 条帖子",
+    "labeled": "已标注 {n} 条",
+    "trained": "已训练",
+    "sidecarUp": "sidecar 在线",
+    "sidecarDown": "sidecar 离线",
+    "sidecarUnset": "未配置 INTENT_SERVICE_URL",
+    "metricsTitle": "最新训练指标",
+    "quickStart": "快速开始",
+    "readmeNote": "完整说明与数据卫生注意事项：intent/README.md"
+  },
+  "billing": {
+    "title": "账单",
+    "currentPlan": "当前套餐：",
+    "onPro": "你已是 Pro。在 Stripe 控制台管理订阅。",
+    "onFree": "你正在此套餐。",
+    "popular": "热门",
+    "back": "返回仪表盘"
+  }
+}

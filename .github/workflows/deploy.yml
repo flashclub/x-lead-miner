@@ -1,0 +1,60 @@
+name: CI & Deploy (Cloudflare Workers)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # Push-CI: verify the app builds. Needs no secrets (landing falls back
+  # to sample leads when SCRAPER_API_KEY is absent — by design).
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma generate
+      - name: Build (OpenNext → Cloudflare)
+        env:
+          NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: price_demo_placeholder
+        run: pnpm build
+
+  # Deploy is MANUAL (workflow_dispatch) and requires these repo secrets:
+  #   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID,
+  #   SCRAPER_API_KEY, AUTH_SECRET,
+  #   GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
+  deploy:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma generate
+      - name: Build (with secrets — live search + real leads)
+        env:
+          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          MULERUN_API_KEY: ${{ secrets.MULERUN_API_KEY }}
+          NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: price_demo_placeholder
+        run: pnpm build
+      - name: Deploy (OpenNext → Cloudflare Workers)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

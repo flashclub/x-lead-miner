@@ -1,0 +1,30 @@
+# Cloudflare Workers runtime does not read .env files at runtime.
+# wrangler dev / opennextjs-cloudflare preview reads .dev.vars instead.
+# Values are accessed via getCloudflareContext().env at runtime.
+
+AUTH_SECRET=
+AUTH_TRUST_HOST=true
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=
+
+# Dev-only auth bypass: opens /dashboard without OAuth, serves a fake pro
+# session. Hard-disabled when NODE_ENV=production, so it never leaks.
+# DEV_BYPASS_AUTH=true
+
+# Scraper.tech X API (https://api.scraper.tech) — server-only, sent as the
+# `Scraper-Key` header. Verified contract: docs/x-api.md
+SCRAPER_API_KEY=
+
+# MuleRun LLM gateway (https://api.mulerun.com) — powers /api/chat and the
+# intent-model labeling teacher (intent/label.py). OpenAI-compatible.
+MULERUN_API_KEY=
+MULERUN_LLM_MODEL=gemini-2.5-flash
+
+# Local PyTorch intent sidecar (intent/serve.py). Unset ⇒ search results
+# simply carry no scores.
+# INTENT_SERVICE_URL=http://127.0.0.1:5019

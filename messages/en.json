@@ -1,0 +1,219 @@
+{
+  "metadata": {
+    "title": "X Lead Miner — find buyers on X",
+    "description": "X Lead Miner watches X around the clock for posts that sound like buying intent and turns them into a scored lead queue. Built for founders, freelancers and sales teams."
+  },
+  "landing": {
+    "badge": "early build",
+    "heroTitle": "Find buyers on X before your competitors do",
+    "heroSubtitle": "X Lead Miner watches X around the clock for posts that sound like buying intent — recommendation requests, tool comparisons, competitor complaints — and turns them into a scored lead queue for founders, freelancers and sales teams.",
+    "ctaPrimary": "Get early access",
+    "ctaSecondary": "See pricing",
+    "navPricing": "Pricing",
+    "signIn": "Sign in",
+    "how": {
+      "title": "How it works",
+      "subtitle": "From a handful of keywords to a ranked queue of people ready to buy.",
+      "steps": [
+        {
+          "title": "Describe your market",
+          "body": "Add the keywords your buyers type when they’re in the market: product categories, competitor names, and phrases like “anyone recommend” or “alternative to”."
+        },
+        {
+          "title": "The miner keeps watching",
+          "body": "Your searches run continuously over public X posts, filtering out noise and bots so real buying signals surface."
+        },
+        {
+          "title": "Work the queue, not the feed",
+          "body": "Matches land in a ranked queue with the post, the author and why it matched. Reply on X, mark it handled, move to the next."
+        }
+      ]
+    },
+    "features": {
+      "title": "Built to surface intent, not noise",
+      "subtitle": "Everything turns the firehose of X into a working pipeline.",
+      "items": [
+        {
+          "title": "Intent-first monitoring",
+          "body": "Tracks the phrases buyers actually type — “anyone recommend”, “alternative to”, “worth paying for” — instead of waiting on brand mentions."
+        },
+        {
+          "title": "Lead scoring",
+          "body": "Every match is ranked by intent strength, author signals and recency, so the hottest posts sit at the top of your queue."
+        },
+        {
+          "title": "Alerts before threads move on",
+          "body": "A daily digest plus real-time alerts for high-intent matches, so you reach buyers while your reply still gets seen."
+        },
+        {
+          "title": "Competitor radar",
+          "body": "Watch competitors’ names and catch their unhappy users at the exact moment they’re ready to switch."
+        }
+      ]
+    },
+    "pricing": {
+      "title": "Pricing",
+      "subtitle": "Start free, upgrade when it sticks.",
+      "popular": "popular",
+      "free": {
+        "features": [
+          "1 saved search",
+          "20 scored leads / month",
+          "Daily digest email"
+        ]
+      },
+      "pro": {
+        "features": [
+          "Unlimited saved searches",
+          "Unlimited scored leads",
+          "Real-time alerts",
+          "Competitor radar"
+        ]
+      },
+      "upgrade": "Upgrade to Pro",
+      "startFree": "Start for free"
+    },
+    "faq": {
+      "title": "FAQ",
+      "items": [
+        {
+          "question": "What counts as a lead?",
+          "answer": "Any public X post that matches one of your saved searches and clears your intent threshold — typically someone asking for recommendations, comparing options, or complaining about what they use today."
+        },
+        {
+          "question": "Which X data does it read?",
+          "answer": "Public posts only, through the official X API. Private accounts and DMs are never read, and nothing is ever posted to X on your behalf."
+        },
+        {
+          "question": "Does it auto-reply to leads for me?",
+          "answer": "No. You get the post, the author and why it matched — the reply stays yours. Hand-written replies convert better and keep your account in good standing."
+        },
+        {
+          "question": "How is this different from X search or saved alerts?",
+          "answer": "X search makes you re-run the query and dig through noise by hand. X Lead Miner keeps your searches always-on, scores every match, and only surfaces the posts worth a reply."
+        }
+      ]
+    },
+    "footerRight": "© 2026 · early build",
+    "pipeline": {
+      "model": "Intent model",
+      "modelSub": "on-device inference",
+      "queue": "Scored & ranked leads",
+      "statScored": "real leads pooled",
+      "statQualified": "scored & binned",
+      "aria": "Animation: raw X posts flow from a lead pool on the left through the intent model; high-intent leads emerge ranked on the right while low-scoring posts fall away.",
+      "scoringHint": "scoring… posts above the intent threshold join the queue",
+      "binHigh": "High intent · score ≥ 80",
+      "binMid": "Mid intent · 60–79",
+      "binLow": "Watchlist · < 60",
+      "emptyBin": "no leads in this tier yet",
+      "input": "Search query",
+      "hitSuffix": "hits",
+      "binCountSuffix": "posts",
+      "sampleNote": "sample data — live mining is unavailable right now"
+    }
+  },
+  "login": {
+    "title": "Sign in to X Lead Miner",
+    "subtitle": "Choose a provider to continue.",
+    "devButton": "Go to dashboard (dev bypass)",
+    "github": "Sign in with GitHub",
+    "google": "Sign in with Google"
+  },
+  "shell": {
+    "signOut": "Sign out",
+    "devBypass": "dev auth bypass"
+  },
+  "nav": {
+    "search": "Lead search",
+    "chat": "Chat",
+    "intent": "Intent lab",
+    "billing": "Billing"
+  },
+  "themeToggle": {
+    "label": "Toggle color theme"
+  },
+  "leadSearch": {
+    "title": "Lead search",
+    "subtitle": "Mine public X posts for buying intent. X advanced operators pass straight through: exact “phrases”, lang:en, -filter:replies, since:YYYY-MM-DD.",
+    "placeholder": "e.g. “anyone recommend” plumber lang:en",
+    "search": "Search",
+    "searching": "Mining…",
+    "ordering": "Result ordering",
+    "tryLabel": "Try:",
+    "empty": "No posts matched. Loosen the phrase or drop a filter, then search again.",
+    "loadMore": "Load more",
+    "loadingMore": "Loading…",
+    "failedPrefix": "Search failed:",
+    "requestFailed": "Search request failed — is the dev server running?",
+    "followers": "followers",
+    "verified": "verified",
+    "scoreTitle": "Buying-intent score from the local PyTorch model (intent/)",
+    "favs": "favs",
+    "replies": "replies",
+    "views": "views",
+    "openOnX": "Open on X ↗",
+    "minutesAgo": "{n}m ago",
+    "hoursAgo": "{n}h ago",
+    "daysAgo": "{n}d ago",
+    "scoringTime": "model scoring took {sec}s",
+    "scoringInProgress": "scoring…",
+    "scoreTimeTitle": "per-post scoring latency (seconds, 4 decimals)"
+  },
+  "chat": {
+    "title": "Chat",
+    "subtitle": "Ask the lead-mining assistant — it knows X search operators and buying-intent signals. Paste a post to get a read on it.",
+    "emptyHint": "Ask about search queries, intent signals, or paste a post to analyze.",
+    "starter1": "Write an X search query to find people asking for alternatives to HubSpot.",
+    "starter2": "What buying-intent signals should I watch for when mining SaaS leads?",
+    "starter3": "Score this post for buying intent: “ugh our helpdesk is so slow, might just switch”",
+    "placeholder": "Message the assistant… (Enter to send, Shift+Enter for a new line)",
+    "send": "Send",
+    "clear": "Clear",
+    "thinking": "thinking…",
+    "failedPrefix": "Chat failed:",
+    "requestFailed": "Chat request failed — is the dev server running?"
+  },
+  "intent": {
+    "title": "Intent lab",
+    "subtitle": "The PyTorch model behind lead scoring: frozen sentence embeddings + a small trained head. Pipeline lives in intent/.",
+    "collect": {
+      "title": "Collect",
+      "detail": "Intent + noise buckets from the X API, deduped by tweet id.",
+      "command": "python3 intent/collect.py"
+    },
+    "label": {
+      "title": "Label (LLM teacher)",
+      "detail": "MuleRun LLM labels buying intent; hand-check a sample before training.",
+      "command": "python3 intent/label.py --limit 50"
+    },
+    "train": {
+      "title": "Train head",
+      "detail": "Frozen sentence embedder (default: embeddinggemma-2, 2026-10) → MLP dim-64-1 → precision@k on holdout.",
+      "command": "python3 intent/train.py"
+    },
+    "serve": {
+      "title": "Serve scores",
+      "detail": "FastAPI on 127.0.0.1:5019; lead search calls it per page when configured.",
+      "command": "python3 intent/serve.py"
+    },
+    "notStarted": "not started",
+    "posts": "{n} posts",
+    "labeled": "{n} labeled",
+    "trained": "trained",
+    "sidecarUp": "sidecar up",
+    "sidecarDown": "sidecar down",
+    "sidecarUnset": "INTENT_SERVICE_URL unset",
+    "metricsTitle": "Latest training metrics",
+    "quickStart": "Quick start",
+    "readmeNote": "Full story and data-hygiene notes: intent/README.md"
+  },
+  "billing": {
+    "title": "Billing",
+    "currentPlan": "Current plan:",
+    "onPro": "You are on Pro. Manage your subscription in the Stripe dashboard.",
+    "onFree": "You are on this plan.",
+    "popular": "popular",
+    "back": "Back to dashboard"
+  }
+}

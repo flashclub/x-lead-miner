@@ -1,0 +1,30 @@
+/*
+ * Theme: aurora (default) — deep indigo night with violet/fuchsia glow.
+ * One of the MonoBoard theme presets; switch by editing the import in
+ * src/app/globals.css or re-scaffolding with `--theme aurora`.
+ */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #0a0a13;
+  --surface: #10101d;
+  --surface-2: #171729;
+  --border: #23233c;
+  --border-strong: #37375a;
+
+  --text: #ededf6;
+  --text-muted: #a2a2bd;
+  --text-subtle: #71718e;
+
+  --accent: #8b5cf6;
+  --accent-fg: #ffffff;
+  --accent-soft: rgba(139, 92, 246, 0.14);
+  --glow: 139 92 246;
+
+  --hero-glow-image:
+    radial-gradient(ellipse 80% 55% at 25% -10%, rgba(139, 92, 246, 0.28), transparent 60%),
+    radial-gradient(ellipse 65% 45% at 80% -15%, rgba(217, 70, 239, 0.16), transparent 55%);
+  --hero-glow-animation: hero-drift 16s ease-in-out infinite alternate;
+  --hero-grid-image: none;
+}

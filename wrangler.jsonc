@@ -1,0 +1,33 @@
+{
+  // Next.js on Cloudflare Workers via @opennextjs/cloudflare
+  //
+  // Database: all MonoBoard SaaS projects share ONE D1 database named "saas".
+  // Each project starts with a baseline `<slug>_user` table and may use up to
+  // two project-prefixed tables without additional approval, so every generated
+  // app points at the same database_name and database_id.
+  //
+  // First-time setup (once for the whole monorepo):
+  //   wrangler d1 create saas
+  // Then paste the returned database_id below. New projects created afterwards
+  // only need `pnpm db:migrate:local` (or :remote) to add their `<slug>_user`
+  // table to this shared database — no new `d1 create` per project.
+  "name": "x-lead-miner",
+  "main": ".open-next/.worker-main/index.js",
+  "compatibility_date": "2025-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "saas",
+      "database_id": "7ea9931b-bc52-40c7-b09e-588704a21bfa"
+    }
+  ],
+  // Stripe webhook needs a raw body; the default size limit is fine.
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,0 +1,2 @@
+# D1 uses the SQLite provider.
+provider = "sqlite"

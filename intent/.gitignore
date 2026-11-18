@@ -1,0 +1,6 @@
+# Pipeline artifacts stay local — training data and model weights are
+# rebuilt with the commands in README.md, and binaries don't belong in git.
+data/
+model/
+__pycache__/
+.venv/

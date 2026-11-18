@@ -1,0 +1,30 @@
+/*
+ * Theme: ember — warm black forge with amber glow.
+ * Dark palette of the ember brand: activates under html[data-theme='dark']
+ * (header ThemeToggle). ember-light.css holds the light default at :root.
+ */
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #120d09;
+  --surface: #1c1511;
+  --surface-2: #261d16;
+  --border: #382a1f;
+  --border-strong: #54402d;
+
+  --text: #f5ece3;
+  --text-muted: #c2a896;
+  --text-subtle: #96796a;
+
+  --accent: #f59e0b;
+  --accent-fg: #2a1600;
+  --accent-soft: rgba(245, 158, 11, 0.13);
+  --glow: 245 158 11;
+
+  --hero-glow-image:
+    radial-gradient(ellipse 80% 50% at 30% -10%, rgba(245, 158, 11, 0.2), transparent 60%),
+    radial-gradient(ellipse 55% 40% at 78% -15%, rgba(239, 68, 68, 0.12), transparent 55%);
+  --hero-glow-animation: hero-drift 18s ease-in-out infinite alternate;
+  --hero-grid-image: none;
+}

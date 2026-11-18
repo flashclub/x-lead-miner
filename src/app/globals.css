@@ -1,0 +1,184 @@
+@import "tailwindcss";
+/* ember-light is the default palette (:root); ember.css re-themes to dark
+ * under html[data-theme='dark'] (header ThemeToggle, persisted in
+ * localStorage — see components/theme-toggle.tsx). */
+@import "./themes/ember-light.css";
+@import "./themes/ember.css";
+
+/*
+ * MonoBoard SaaS template — design system v2.
+ * Semantic tokens are defined per theme in src/app/themes/*.css
+ * (chosen at scaffold time via `pnpm new-saas <name> --theme <name>`).
+ * See DESIGN.md for the token table, theme list and animation budget.
+ */
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+
+  --shadow-glow: 0 0 32px rgb(var(--glow) / 0.3);
+  --shadow-glow-sm: 0 0 18px rgb(var(--glow) / 0.16);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+}
+
+body {
+  color: var(--text);
+  background: var(--bg);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background: rgb(var(--glow) / 0.35);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Hero background effects (pure CSS, driven by theme variables).      */
+/* Themes compose --hero-glow-image / --hero-grid-image; the component */
+/* in src/components/effects/hero-background.tsx only renders layers.  */
+/* ------------------------------------------------------------------ */
+
+.hero-glow {
+  background-image: var(--hero-glow-image, none);
+  animation: var(--hero-glow-animation, none);
+  will-change: transform;
+}
+
+.hero-grid {
+  background-image: var(--hero-grid-image, none);
+  background-size: var(--hero-grid-size, 44px 44px);
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent 85%);
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+@keyframes hero-drift {
+  from {
+    transform: translate3d(-3%, -2%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3%, 2%, 0) scale(1.06);
+  }
+}
+
+/* Gradient text for the hero headline (visual only; text stays in DOM). */
+.gradient-text {
+  background-image: linear-gradient(120deg, var(--text) 30%, var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Theme toggle glyph swap without client state (components/theme-toggle.tsx):
+ * light mode shows the moon ("switch to dark"), dark mode shows the sun. */
+html:not([data-theme='dark']) .theme-toggle-sun {
+  display: none;
+}
+
+html[data-theme='dark'] .theme-toggle-moon {
+  display: none;
+}
+
+/* Global reduced-motion degradation: animations freeze on their final
+ * (fully visible) frame; nothing depends on animation to be readable. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Lead pipeline diagram (components/effects/lead-pipeline-diagram).   */
+/* ------------------------------------------------------------------ */
+
+@keyframes pipeline-card-pop {
+  0% {
+    transform: scale(0.55);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pipeline-card-enter {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pipeline-card-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes pipeline-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.4;
+  }
+  70% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+}
+
+.pipeline-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pipeline-pulse 2.2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pipeline-card-enter,
+  .pipeline-pulse {
+    animation: none;
+  }
+}
+
+/* pipeline tooltip (HTML overlay over the SVG) */
+.pipeline-tooltip {
+  transform: translate(-50%, calc(-100% - 14px));
+  max-width: 280px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-glow-sm, 0 4px 16px rgb(0 0 0 / 0.12));
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.pipeline-tip-badge {
+  flex: none;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 14px;
+  font-weight: 700;
+}
