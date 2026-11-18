@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
 import { scoreTexts } from '@/lib/intent';
 
 const scoreParamsSchema = z.object({
@@ -17,10 +16,6 @@ const scoreParamsSchema = z.object({
  * the model inference wall time in seconds (sidecar-reported).
  */
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
 
   let parsed: z.SafeParseReturnType<z.infer<typeof scoreParamsSchema>, z.infer<typeof scoreParamsSchema>>;
   try {

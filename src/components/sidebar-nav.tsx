@@ -7,7 +7,6 @@ const NAV_ITEMS = [
   { href: '/dashboard', labelKey: 'search' },
   { href: '/chat', labelKey: 'chat' },
   { href: '/intent', labelKey: 'intent' },
-  { href: '/billing', labelKey: 'billing' },
 ] as const;
 
 /**

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
 import { getServerVar } from '@/lib/server-env';
 import { XApiClient, XApiError, type XApiErrorKind } from '@/lib/x-api';
 
@@ -15,10 +14,30 @@ const searchParamsSchema = z.object({
  * Server-side proxy so SCRAPER_API_KEY never reaches the browser.
  * Returns the normalized SearchPage from lib/x-api.ts.
  */
+// Public demo: simple in-memory per-IP limiter protects the paid X data
+// quota (20 searches / hour / IP — enough for portfolio evaluation).
+const RATE_LIMIT = 20;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+const hits = new Map<string, { count: number; resetAt: number }>();
+
+function rateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = hits.get(ip);
+  if (!entry || now > entry.resetAt) {
+    hits.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > RATE_LIMIT;
+}
+
 export async function GET(request: Request) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local';
+  if (rateLimited(ip)) {
+    return NextResponse.json(
+      { error: 'Rate limited — this public demo allows 20 searches per hour. Run your own instance: github.com/flashclub/x-lead-miner' },
+      { status: 429 }
+    );
   }
 
   const url = new URL(request.url);

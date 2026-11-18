@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
 import { getServerVar } from '@/lib/server-env';
 
 const chatRequestSchema = z.object({
@@ -32,10 +31,6 @@ const SYSTEM_PROMPT = [
  * endpoint (server-side only; the key never reaches the browser).
  */
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
 
   let body: unknown;
   try {

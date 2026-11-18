@@ -1,6 +1,5 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { PLANS } from '@/lib/plans';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -51,12 +50,6 @@ export default async function LandingPage({
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web',
       description: heroSubtitle,
-      offers: Object.values(PLANS).map((plan) => ({
-        '@type': 'Offer',
-        name: plan.name,
-        price: plan.id === 'pro' ? '19.00' : '0',
-        priceCurrency: 'USD',
-      })),
     },
     {
       '@context': 'https://schema.org',
@@ -83,8 +76,13 @@ export default async function LandingPage({
             {PRODUCT}
           </Link>
           <nav className="flex items-center gap-4 text-sm">
-            <a href="#pricing" className="text-text-muted transition-colors hover:text-text">
-              {t('navPricing')}
+            <a
+              href="https://github.com/flashclub/x-lead-miner"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-text-muted transition-colors hover:text-text"
+            >
+              GitHub
             </a>
             <LanguageSwitcher />
             <ThemeToggle />
@@ -105,8 +103,11 @@ export default async function LandingPage({
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg text-text-muted">{heroSubtitle}</p>
           <div className="mt-10 flex justify-center gap-3">
-            <Button href="/login">{t('ctaPrimary')}</Button>
-            <Button href="#pricing" variant="secondary">
+            <Button href="/dashboard">{t('ctaPrimary')}</Button>
+            <Button
+              href="https://github.com/flashclub/x-lead-miner"
+              variant="secondary"
+            >
               {t('ctaSecondary')}
             </Button>
           </div>
@@ -172,47 +173,6 @@ export default async function LandingPage({
         </div>
       </section>
 
-      <section id="pricing" className="border-t border-border">
-        <div className="mx-auto max-w-5xl px-6 py-20">
-          <h2 className="font-display text-2xl font-semibold tracking-tight">{t('pricing.title')}</h2>
-          <p className="mt-2 text-text-muted">{t('pricing.subtitle')}</p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {Object.values(PLANS).map((plan) => (
-              <Card
-                key={plan.id}
-                className={plan.id === 'pro' ? 'border-accent shadow-glow-sm' : undefined}
-              >
-                <div className="flex items-center justify-between">
-                  <h3 className="font-display text-xl font-semibold">{plan.name}</h3>
-                  {plan.id === 'pro' && (
-                    <Badge className="border-accent text-accent">{t('pricing.popular')}</Badge>
-                  )}
-                </div>
-                <p className="mt-3 font-display text-3xl font-semibold">{plan.priceLabel}</p>
-                <ul className="mt-4 space-y-2 text-sm text-text-muted">
-                  {(t.raw(`pricing.${plan.id}.features`) as string[]).map((feature) => (
-                    <li key={feature} className="flex gap-2">
-                      <span aria-hidden="true" className="font-mono text-accent">
-                        {'///'}
-                      </span>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-6">
-                  {plan.id === 'pro' ? (
-                    <Button href="/login">{t('pricing.upgrade')}</Button>
-                  ) : (
-                    <Button href="/login" variant="secondary">
-                      {t('pricing.startFree')}
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <section id="faq" className="border-t border-border">
         <div className="mx-auto max-w-3xl px-6 py-20">
