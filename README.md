@@ -1,138 +1,117 @@
 # X Lead Miner
 
-A SaaS application generated from the MonoBoard `nextjs` template.
+Real-time **buyer-intent lead mining** from X (Twitter). Type a search, get
+live posts back instantly, then a locally-trained AI model scores every post
+0–1 for buying intent — with per-post inference latency shown to 4 decimals.
 
-## Stack
+> Thousands of people announce their buying intentions on X every day:
+> "is there an app that…", "anyone recommend…", "I wish there was…".
+> X Lead Miner surfaces them, ranks them, and tiers them into a lead queue.
 
-- **Framework:** Next.js (App Router)
-- **Auth:** Auth.js v5 (JWT strategy, GitHub + Google OAuth)
-- **Billing:** Stripe (Free + Pro subscription, webhook-created customer)
-- **Database:** Cloudflare D1 + Prisma (`@prisma/adapter-d1`)
-- **Deployment:** Cloudflare Workers (`@opennextjs/cloudflare`)
+**Status**: open-source portfolio project. CI builds on GitHub Actions
+(45s, free runner); deploys to Cloudflare Workers (free tier, no server).
 
-## Design
+## What it does
 
-The visual layer is a token-driven design system with a theme preset
-(`aurora`, `terminal`, `tide`, `ember`, or `minimal` — recorded in
-`package.json` → `monoboard.theme`). See [DESIGN.md](./DESIGN.md) for the
-token table, theme switching, animation budget and component provenance
-before changing any styling.
+- **Instant search** — X advanced operators pass straight through
+  (`"exact phrase"`, `lang:en`, `-filter:replies`, `since:YYYY-MM-DD`).
+  Results render the moment the data provider responds.
+- **Async AI scoring** — after results render, each post is scored
+  independently by a locally-trained intent model; every card shows its own
+  score badge **and its own inference latency** (e.g. `0.0891s`).
+- **Three-tier queue** — high intent (≥0.8) / mid (0.6–0.79) / watchlist
+  (<0.6), counts growing live as posts are scored.
+- **Intent Lab** — a page that exposes the ML pipeline itself: collection,
+  labeling, training and serving, with live metrics from the latest run.
 
-## Setup
+## The intent model
 
-### 1. Install dependencies
+Distilled from a Gemini 2.5 Flash teacher into a **199 KB artifact**:
+
+```
+X post text ──▶ frozen embeddinggemma-2 (768-d) ──▶ MLP 768-64-1 ──▶ sigmoid ──▶ 0–1
+```
+
+| metric (held-out test, n=1,179) | score |
+| --- | --- |
+| precision@5 | 1.00 |
+| precision@10 | 1.00 |
+| accuracy @0.5 | 0.877 |
+
+Trained on **7,866 labeled X posts** (2,850 intent / 5,016 noise) collected
+via 27 query families including hard negatives (same syntax, zero buying
+intent — "recommend me some anime" is *not* a lead). The scoring runs on CPU
+in single-digit milliseconds per post.
+
+⚠️ Labels are teacher-generated (no human gold set): the metrics measure
+agreement with the teacher (~90% human agreement per a 50-sample audit).
+Complaint-based intent is under-detected — misses recall, never pollutes the
+queue. Full pipeline, audit sample and lessons learned:
+[flashclub/x-lead-intent-pipeline](https://github.com/flashclub/x-lead-intent-pipeline)
+
+## Architecture
+
+```
+Browser ──▶ Next.js 15 (OpenNext) ──▶ Cloudflare Workers (free tier)
+                │                          │
+                │                          ├── D1 (SQLite) — users, sessions
+                │                          └── scraper.tech API ──▶ live X posts
+                │
+                └──▶ POST /api/leads/score ──▶ intent sidecar (FastAPI + PyTorch,
+                                               local dev) ──▶ per-post latency
+```
+
+- Search returns **instantly** — scoring is async, streamed per post.
+- The Workers deployment omits the Python sidecar by design (scores are
+  omitted gracefully); run the sidecar locally to see scores.
+- No login, no paywall: the demo is fully open, search is IP-rate-limited
+  (20/h) to protect the data quota.
+
+## Tech stack
+
+| layer | choice |
+| --- | --- |
+| framework | Next.js 15 (App Router) + OpenNext → Cloudflare Workers |
+| styling | Tailwind CSS v4, token-driven themes (light/dark) |
+| i18n | next-intl (EN / ZH) |
+| ML | sentence-transformers (embeddinggemma-2, frozen) + PyTorch MLP head |
+| serving | FastAPI sidecar, CPU fp32 inference |
+
+## Run locally
 
 ```bash
 pnpm install
+pnpm exec prisma generate
+
+# intent sidecar (optional — scores are omitted without it)
+cd intent && python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+SCRAPER_API_KEY=... MULERUN_API_KEY=... python3 collect_bulk.py   # collect
+MULERUN_API_KEY=... python3 label.py --in data/posts_10k.jsonl     # label
+python3 train.py --data data/labeled_10k.jsonl --out model         # train
+python3 serve.py                                                   # :5019
+
+# app
+cp .env.example .env   # SCRAPER_API_KEY + INTENT_SERVICE_URL=http://127.0.0.1:5019
+pnpm dev               # http://localhost:3019
 ```
 
-### 2. Configure environment
+Environment variables (all optional — features degrade gracefully):
 
-```bash
-cp .env.example .env
-cp .dev.vars.example .dev.vars
-```
+| var | enables |
+| --- | --- |
+| `SCRAPER_API_KEY` | live X search |
+| `INTENT_SERVICE_URL` | per-post intent scoring |
+| `MULERUN_API_KEY` | chat assistant + labeling |
 
-Fill in:
+## Deploy (GitHub Actions, free)
 
-- `AUTH_SECRET` — generate with `openssl rand -base64 32`
-- GitHub OAuth credentials — https://github.com/settings/developers
-- Google OAuth credentials — https://console.cloud.google.com/apis/credentials
-- Stripe keys — https://dashboard.stripe.com/apikeys
-- `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` — the `price_xxx` for your Pro plan
+`Settings → Secrets and variables → Actions`, add `CLOUDFLARE_API_TOKEN`
+(Edit Workers template) + `CLOUDFLARE_ACCOUNT_ID`, then
+**Actions → CI & Deploy → Run workflow**. GitHub runners build OpenNext and
+push to Cloudflare — no local build, no server.
 
-### 3. Set up the shared D1 database
+## License
 
-All MonoBoard SaaS apps share **one** D1 database named `saas`. Each app starts
-with a per-project user table (this app's table is `x_lead_miner_user`), so
-isolation comes from project-prefixed table names rather than separate databases.
-
-**First-time only** (once for the whole monorepo — skip if `saas` already exists):
-
-```bash
-wrangler d1 create saas
-```
-
-Paste the returned `database_id` into `wrangler.jsonc`. Every SaaS app generated
-after this points at the same `database_id`; no new `d1 create` per project.
-
-### 4. Apply migrations
-
-```bash
-pnpm db:migrate:local    # creates this app's table in the local saas DB
-pnpm db:migrate:remote   # production DB (when ready)
-```
-
-### 5. Run in development
-
-```bash
-pnpm dev          # Node-based dev server (fast)
-pnpm dev:edge     # Simulated Workers env (validate edge compatibility before deploy)
-```
-
-Open http://localhost:3000.
-
-## Deploying
-
-```bash
-pnpm build
-pnpm deploy
-```
-
-Set production secrets with:
-
-```bash
-wrangler secret put AUTH_SECRET
-wrangler secret put GITHUB_CLIENT_SECRET
-wrangler secret put GOOGLE_CLIENT_SECRET
-wrangler secret put STRIPE_SECRET_KEY
-wrangler secret put STRIPE_WEBHOOK_SECRET
-```
-
-## Stripe webhook setup
-
-In the Stripe dashboard, create a webhook endpoint pointing to:
-
-```
-https://<your-domain>/api/stripe/webhook
-```
-
-Subscribe to:
-
-- `checkout.session.completed`
-- `customer.subscription.updated`
-- `customer.subscription.deleted`
-
-Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
-
-## Architecture notes
-
-- **Shared D1, two-table budget:** all MonoBoard SaaS apps share one D1 database
-  (`saas`) rather than creating a database per project. Each app starts with
-  `x_lead_miner_user`. A project may use up to two total tables without
-  additional approval; add the second only when the real MVP needs it and name
-  every table with the `<slug>_` prefix. Obtain explicit user approval before
-  creating a third or later table.
-- **Cloudflare platform:** all Cloudflare capabilities are available when the
-  product genuinely needs them. Select the smallest sufficient combination and
-  use real project bindings; do not add R2, KV, Queues, Durable Objects,
-  Workflows, Vectorize, Workers AI, or other services speculatively.
-- **JWT sessions:** session data lives in an encrypted cookie, not the database.
-  This avoids Prisma-in-middleware pitfalls on the edge runtime.
-- **User row created on sign-in:** no Auth.js Adapter is used. The `signIn`
-  callback in `auth.ts` upserts a user row by email on every login, so the row
-  exists before any Stripe webhook tries to look it up.
-- **Single-table billing:** the Stripe billing columns (`stripeCustomerId`,
-  `subscriptionPlan`, `subscriptionStatus`, `currentPeriodEnd`) live directly
-  on the user row — NULL until the first successful checkout, then filled by
-  the webhook. The checkout session uses `customer_email` (not `customer`), so
-  no Stripe Customer exists until payment succeeds.
-- **Plan propagation:** after a successful checkout, the user's `plan` in the
-  JWT updates on their next request. Expect a short delay (minutes).
-- **Edge-safe middleware:** `middleware.ts` imports only `auth.config.ts`
-  (no Prisma). The full config lives in `auth.ts` (server-only).
-
-## Monoboard metadata
-
-This app is tagged with `monoboard.category: "saas"` in `package.json` so the
-MonoBoard dashboard recognizes it as a SaaS product.
+MIT (code). Post content belongs to its authors; collected data is not
+redistributed.
