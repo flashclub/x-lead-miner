@@ -16,7 +16,8 @@
   "compatibility_date": "2025-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
-    "directory": "./public",
+    // OpenNext 静态资源（/_next/static 等）由这个目录提供服务
+    "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
   "d1_databases": [
