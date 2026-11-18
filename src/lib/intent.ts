@@ -196,12 +196,18 @@ async function scoreNative(
         text: text.slice(0, 1500),
       })) as { data?: number[][]; embeddings?: number[] };
       const raw = res?.data?.[0] ?? res?.embeddings;
-      if (!Array.isArray(raw)) return null;
+      if (!Array.isArray(raw)) {
+        console.error('[intent] AI response missing embedding:', JSON.stringify(res).slice(0, 200));
+        return null;
+      }
       let norm = 0;
       for (const v of raw) norm += v * v;
       norm = Math.sqrt(norm) || 1;
       const emb = raw.map((v) => v / norm);
-      if (emb.length !== W.w1[0]?.length) return null; // emb=768 vs row width
+      if (emb.length !== W.w1[0]?.length) {
+        console.error('[intent] dim mismatch:', emb.length, 'vs', W.w1[0]?.length);
+        return null;
+      }
       const hidden = W.b1.map((b, j) => {
         let acc = b;
         const row = W.w1[j];
@@ -215,7 +221,8 @@ async function scoreNative(
     }
     void perItem;
     return { scores, elapsedSec: (Date.now() - t0) / 1000, timesSec };
-  } catch {
+  } catch (err) {
+    console.error('[intent] native scoring failed:', err instanceof Error ? err.message : err);
     return null; // native path unavailable/broken — sidecar fallback
   }
 }
