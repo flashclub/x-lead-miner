@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { scoreTexts } from '@/lib/intent';
+import { scoreTexts, lastNativeError } from '@/lib/intent';
 
 const scoreParamsSchema = z.object({
   texts: z.array(z.string().min(1).max(8000)).min(1).max(100),
@@ -32,7 +32,10 @@ export async function POST(request: Request) {
   const result = await scoreTexts(parsed.data.texts, { perItem: parsed.data.perItem === true });
   if (!result) {
     return NextResponse.json(
-      { error: 'Intent model sidecar unavailable — scores omitted' },
+      {
+        error: 'Intent model sidecar unavailable — scores omitted',
+        nativeError: lastNativeError(),
+      },
       { status: 503 }
     );
   }

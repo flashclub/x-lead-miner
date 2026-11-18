@@ -165,6 +165,11 @@ const getCachedLeads = unstable_cache(
 
 import headWeights from '@/lib/intent-head-weights.json';
 
+let lastNativeErr: string | null = null;
+export function lastNativeError(): string | null {
+  return lastNativeErr;
+}
+
 /**
  * Score texts inside the Worker: Workers AI computes bge-base-en-v1.5
  * embeddings (768-d, the head's input space), then the bundled MLP head
@@ -197,7 +202,8 @@ async function scoreNative(
       })) as { data?: number[][]; embeddings?: number[] };
       const raw = res?.data?.[0] ?? res?.embeddings;
       if (!Array.isArray(raw)) {
-        console.error('[intent] AI response missing embedding:', JSON.stringify(res).slice(0, 200));
+        lastNativeErr = 'AI response missing embedding: ' + JSON.stringify(res).slice(0, 180);
+        console.error('[intent]', lastNativeErr);
         return null;
       }
       let norm = 0;
@@ -205,7 +211,8 @@ async function scoreNative(
       norm = Math.sqrt(norm) || 1;
       const emb = raw.map((v) => v / norm);
       if (emb.length !== W.w1[0]?.length) {
-        console.error('[intent] dim mismatch:', emb.length, 'vs', W.w1[0]?.length);
+        lastNativeErr = `dim mismatch: ${emb.length} vs ${W.w1[0]?.length}`;
+        console.error('[intent]', lastNativeErr);
         return null;
       }
       const hidden = W.b1.map((b, j) => {
@@ -222,7 +229,8 @@ async function scoreNative(
     void perItem;
     return { scores, elapsedSec: (Date.now() - t0) / 1000, timesSec };
   } catch (err) {
-    console.error('[intent] native scoring failed:', err instanceof Error ? err.message : err);
+    lastNativeErr = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    console.error('[intent] native scoring failed:', lastNativeErr);
     return null; // native path unavailable/broken — sidecar fallback
   }
 }
