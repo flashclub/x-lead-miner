@@ -24,6 +24,7 @@ jobs:
       - name: Build (OpenNext → Cloudflare)
         env:
           NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: price_demo_placeholder
+          NODE_OPTIONS: --max-old-space-size=6144
         run: pnpm build
 
   # Deploy is MANUAL (workflow_dispatch) and requires these repo secrets:
@@ -51,6 +52,7 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           MULERUN_API_KEY: ${{ secrets.MULERUN_API_KEY }}
           NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: price_demo_placeholder
+          NODE_OPTIONS: --max-old-space-size=6144
         run: pnpm build
       - name: Deploy (OpenNext → Cloudflare Workers)
         uses: cloudflare/wrangler-action@v3
