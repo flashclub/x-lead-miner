@@ -54,6 +54,7 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           MULERUN_API_KEY: ${{ secrets.MULERUN_API_KEY }}
           NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: price_demo_placeholder
+          NEXT_PUBLIC_APP_URL: https://x-lead-miner.ideaguard.dev
           NODE_OPTIONS: --max-old-space-size=6144
         run: pnpm exec opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion
       - name: Install wrangler v4 (new asset upload API)

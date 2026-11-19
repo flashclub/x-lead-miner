@@ -12,6 +12,10 @@
   // only need `pnpm db:migrate:local` (or :remote) to add their `<slug>_user`
   // table to this shared database — no new `d1 create` per project.
   "name": "x-lead-miner",
+  // 自定义域名：wrangler 部署时自动注册路由并创建 DNS 记录
+  "routes": [
+    { "pattern": "x-lead-miner.ideaguard.dev", "custom_domain": true }
+  ],
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-11-01",
   "compatibility_flags": ["nodejs_compat"],

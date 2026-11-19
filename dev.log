@@ -471,3 +471,8 @@ Using vars defined in .dev.vars
 [pipeline] falling back to sample leads: only 0 scored leads — not caching a thin result
  GET /zh 200 in 2531ms
  GET /icon.svg?ee6b6aec6ad60040 200 in 14ms
+ ✓ Compiled in 97ms (283 modules)
+[pipeline] falling back to sample leads: only 0 scored leads — not caching a thin result
+ GET /zh 200 in 2410ms
+[pipeline] falling back to sample leads: only 0 scored leads — not caching a thin result
+ GET /zh 200 in 2632ms
