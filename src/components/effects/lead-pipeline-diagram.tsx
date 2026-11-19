@@ -230,6 +230,8 @@ export function LeadPipelineDiagram({
   const transitLayerRef = useRef<SVGGElement | null>(null);
   const flyLayerRef = useRef<SVGGElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const poolCountRef = useRef<HTMLSpanElement | null>(null);
+  const poolArrivals = useRef(0);
   const inputTextRef = useRef<SVGTSpanElement | null>(null);
   const hitCountRef = useRef<SVGTSpanElement | null>(null);
   const hitTextRef = useRef<SVGTextElement | null>(null);
