@@ -129,16 +129,19 @@ const INTAKE_FROM: Pt = { x: CONNECTOR.x, y: CONNECTOR.y0 };
 
 const TYPE_CHAR_S = 0.03; // s per typed character
 const HIT_HOLD = 0.45; // s the "N hits" line holds before the next query types
-const INTAKE_INTERVAL = 0.09; // s between leads falling into the pool (~11/s)
-const INTAKE_DURATION = 0.3; // s to fall into the pool
+const INTAKE_INTERVAL = 0.04; // s between leads falling into the pool (~25/s)
+const INTAKE_DURATION = 0.22; // s to fall into the pool
 const CYCLE_TAIL = 0.25; // s of quiet before the next query starts typing
 // consumed faster than any intake rate — the model is never the bottleneck
 // (effect design rule: particles are created freely, no capacity gates)
-const TRANSIT_DURATION = 0.3; // s pool-dot → model (eased)
-const FLY_DURATION = 0.45; // s model → bin
+const TRANSIT_DURATION = 0.25; // s pool-dot → model (eased)
+const FLY_DURATION = 0.4; // s model → bin
 const POOL_SLOTS = 60; // visual buffer dots; recycled oldest-first when full
 const POOL_PREFILL = 8; // dots shown before the first retrieval lands
-const DOT_LIFETIME = 2.2; // s a pool dot stays before it flows away into the model
+const DOT_LIFETIME = 1.4; // s a pool dot stays before it flows away into the model
+
+/* ── COUNTER SPEED — numbers ride the particles: each dot carries a burst
+   of posts (see rollBurst); at ~25 dots/s the stats race at ~250/s ── */
 const HIT_RADIUS = 14;
 
 const laneOf = (score: number) => (score >= 80 ? 0 : score >= 60 ? 1 : 2);
@@ -230,7 +233,10 @@ export function LeadPipelineDiagram({
   const flyLayerRef = useRef<SVGGElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const poolCountRef = useRef<HTMLSpanElement | null>(null);
-  const poolArrivals = useRef(leads.length); // seeded: mid-stream at load
+  const binnedRef = useRef<HTMLSpanElement | null>(null);
+  const binCountRefs = useRef<(SVGTSpanElement | null)[]>([null, null, null]);
+  /** live counters — advanced in bursts carried by the visible particles */
+  const counters = useRef<{ pooled: number; binned: number; lanes: [number, number, number] } | null>(null);
   const inputTextRef = useRef<SVGTSpanElement | null>(null);
   const hitCountRef = useRef<SVGTSpanElement | null>(null);
   const hitTextRef = useRef<SVGTextElement | null>(null);
@@ -260,7 +266,7 @@ export function LeadPipelineDiagram({
     let cycleStart = 0;
     let queryIdx = 0;
     let intakeCursor = 0; // rotating pointer into `leads`
-    let lastIntake = -1;
+    let intakeClock = 0; // accumulates real time for framerate-independent intake
     const intakes: { slot: number; born: number; leadIdx: number; intakeSlot: number }[] = [];
     let arrivalSlot = POOL_PREFILL; // next virgin pool slot (dots grow 8 → 60)
     const freeSlots: number[] = []; // slots released by expired dots, LIFO
@@ -298,15 +304,15 @@ export function LeadPipelineDiagram({
       return ratioQueue.pop() as number;
     };
     // decorative per-cycle hit count — random each query so it reads alive
-    let cycleHits = 5 + Math.floor(rand() * 11);
+    let cycleHits = 45 + Math.floor(rand() * 45);
     let intakeBudget = cycleHits; // hits stream into the pool at intake pace
-    const transits: { key: number; el: SVGGElement; born: number; from: Pt; lane: number; lineIdx: number; leadIdx: number; fresh: boolean }[] = [];
-    const flies: { key: number; el: SVGGElement; born: number; lane: number; leadIdx: number; fresh: boolean; live: FlyLive }[] = [];
+    const transits: { key: number; el: SVGGElement; born: number; from: Pt; lane: number; lineIdx: number; leadIdx: number; fresh: boolean; amount: number }[] = [];
+    const flies: { key: number; el: SVGGElement; born: number; lane: number; leadIdx: number; fresh: boolean; amount: number; live: FlyLive }[] = [];
     let lastLineIdx = -1; // no immediate repeat — keeps the flow organic
     let particleKey = 0;
     /** Transit particles are created freely — the effect never throttles,
      *  drops or queues a signal, whatever the data volume. */
-    const spawnTransit = (from: Pt, lane: number, leadIdx: number, fresh: boolean) => {
+    const spawnTransit = (from: Pt, lane: number, leadIdx: number, fresh: boolean, amount: number) => {
       // uniform random line, never the same twice in a row: every line keeps
       // ~12.5% of the flow (no starvation) without a visible top-to-bottom
       // round-robin march
@@ -320,10 +326,10 @@ export function LeadPipelineDiagram({
       c.style.fill = 'var(--text-subtle)';
       el.appendChild(c);
       transitLayerRef.current?.appendChild(el);
-      transits.push({ key: particleKey, el, born: elapsed, from, lane, lineIdx, leadIdx, fresh });
+      transits.push({ key: particleKey, el, born: elapsed, from, lane, lineIdx, leadIdx, fresh, amount });
       particleKey += 1;
     };
-    const spawnFly = (lane: number, leadIdx: number, fresh: boolean) => {
+    const spawnFly = (lane: number, leadIdx: number, fresh: boolean, amount: number) => {
       const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       halo.setAttribute('r', '10');
@@ -341,14 +347,30 @@ export function LeadPipelineDiagram({
         x: OUT_LANES[lane].p0.x,
         y: OUT_LANES[lane].p0.y,
       };
-      flies.push({ key: particleKey, el, born: elapsed, lane, leadIdx, fresh, live });
+      flies.push({ key: particleKey, el, born: elapsed, lane, leadIdx, fresh, amount, live });
       fliesLiveRef.current.push(live);
       particleKey += 1;
     };
+    if (!counters.current) {
+      counters.current = {
+        pooled: leads.length,
+        binned: leads.length,
+        lanes: [...bins.counts] as [number, number, number],
+      };
+    }
+    const C = counters.current;
     hitPos.current.pool = Array.from({ length: POOL_SLOTS }, () => ({ x: -999, y: -999 }));
+    /** posts represented by one visible dot — irregular so the stats
+     *  breathe instead of ticking like a stopwatch */
+    const rollBurst = (): number => {
+      const base = 5 + Math.floor(rand() * 8); // 5–12
+      return rand() < 0.15 ? base * 2 : base; // occasional big cluster
+    };
+    const slotBurst: number[] = Array(POOL_SLOTS).fill(0);
     for (let i = 0; i < Math.min(POOL_PREFILL, leads.length); i++) {
       const slot = takeSlot();
       poolSlotLead.current[slot] = leads[i]; // pre-filled dots carry real posts
+      slotBurst[slot] = rollBurst();
       // staggered births IN THE PAST: the first dot flows to the model at
       // ~0.3s, then one every 0.3s — the stream is alive from frame one
       slotBornAt[slot] = 0.3 * (i + 1) - DOT_LIFETIME;
@@ -366,7 +388,7 @@ export function LeadPipelineDiagram({
     const tick = (now: number) => {
       try {
       if (!last) last = now;
-      const dt = Math.min(0.05, (now - last) / 1000);
+      const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
       elapsed += dt;
 
@@ -377,6 +399,15 @@ export function LeadPipelineDiagram({
       const cycleEnd = hitEnd + CYCLE_TAIL; // next query types right away —
       // intake keeps streaming into the pool in the background
       const ct = elapsed - cycleStart;
+
+      // 0) write the burst-carried counters to the DOM (bursts land where
+      // the particles are — the numbers move WITH the picture, not on a timer)
+      if (poolCountRef.current) poolCountRef.current.textContent = String(C.pooled);
+      if (binnedRef.current) binnedRef.current.textContent = String(C.binned);
+      for (let i = 0; i < 3; i++) {
+        const el = binCountRefs.current[i];
+        if (el) el.textContent = String(C.lanes[i]);
+      }
 
       // 1) typewriter input — steady text, caret transparent (per design)
       if (inputTextRef.current) {
@@ -391,25 +422,30 @@ export function LeadPipelineDiagram({
         hitTextRef.current.setAttribute('opacity', ct >= hitAt && ct <= hitEnd ? '1' : '0');
       }
 
-      // 2) intake — every hit eventually lands in the pool, one dot per
-      // INTAKE_INTERVAL; cycles overlap freely (the next query types while
-      // the previous hits are still streaming in).
-      if (intakeBudget > 0 && elapsed - lastIntake >= INTAKE_INTERVAL) {
+      // 2) intake — budget-driven so the rate is framerate-independent:
+      // one dot per INTAKE_INTERVAL of real time, capped per frame
+      intakeClock += dt;
+      let guard = 0;
+      while (
+        intakeBudget > 0 &&
+        intakeClock >= INTAKE_INTERVAL &&
+        guard < 8
+      ) {
+        intakeClock -= INTAKE_INTERVAL;
         const intakeSlot = [0, 1, 2, 3, 4, 5].find(
           (s) => !intakes.some((t) => t.intakeSlot === s)
         );
-        if (intakeSlot !== undefined) {
-          lastIntake = elapsed;
-          intakeBudget -= 1;
-          const slot = takeSlot();
-          intakes.push({
-            slot,
-            born: elapsed,
-            leadIdx: intakeCursor % leads.length,
-            intakeSlot,
-          });
-          intakeCursor += 1;
-        }
+        if (intakeSlot === undefined) break; // all 6 lanes busy — next frame
+        guard += 1;
+        intakeBudget -= 1;
+        const slot = takeSlot();
+        intakes.push({
+          slot,
+          born: elapsed,
+          leadIdx: intakeCursor % leads.length,
+          intakeSlot,
+        });
+        intakeCursor += 1;
       }
       for (let k = intakes.length - 1; k >= 0; k--) {
         const it = intakes[k];
@@ -425,10 +461,8 @@ export function LeadPipelineDiagram({
           if (el) el.setAttribute('opacity', '0');
           poolSlotLead.current[it.slot] = leads[it.leadIdx];
           slotBornAt[it.slot] = elapsed;
-          poolArrivals.current += 1; // cumulative "pooled" stat
-          if (poolCountRef.current) {
-            poolCountRef.current.textContent = String(poolArrivals.current);
-          }
+          slotBurst[it.slot] = rollBurst();
+          C.pooled += slotBurst[it.slot];
         }
       }
 
@@ -450,7 +484,7 @@ export function LeadPipelineDiagram({
           // Lifetime over — the signal FLOWS away along an inlet line into
           // the model (it must never fade in place). Particles are spawned
           // freely; nothing throttles or drops it.
-          spawnTransit(hitPos.current.pool[s], nextRatioLane(), leads.indexOf(lead), false);
+          spawnTransit(hitPos.current.pool[s], nextRatioLane(), leads.indexOf(lead), false, slotBurst[s]);
           poolSlotLead.current[s] = null;
           slotBornAt[s] = undefined;
           freeSlots.push(s);
@@ -488,7 +522,7 @@ export function LeadPipelineDiagram({
         if (p >= 1) {
           transits.splice(k, 1);
           tr.el.remove();
-          spawnFly(tr.lane, tr.leadIdx, tr.fresh);
+          spawnFly(tr.lane, tr.leadIdx, tr.fresh, tr.amount);
         }
       }
 
@@ -509,14 +543,15 @@ export function LeadPipelineDiagram({
           if (liveIdx >= 0) fliesLiveRef.current.splice(liveIdx, 1);
           const lane = fly.lane;
           lastDockAt[lane] = elapsed;
+          C.binned += fly.amount;
+          C.lanes[lane] += fly.amount;
+          // the fly also swaps the tier's example card
           setBins((prev) => {
-            const counts: [number, number, number] = [...prev.counts];
-            counts[lane] += 1;
             const latest = [...prev.latest];
             latest[lane] = lead;
             const seq: [number, number, number] = [...prev.seq];
             seq[lane] = prev.seq[lane] + 1;
-            return { counts, latest, seq };
+            return { ...prev, latest, seq };
           });
         }
       }
@@ -525,7 +560,7 @@ export function LeadPipelineDiagram({
       if (ct >= cycleEnd) {
         cycleStart = elapsed;
         queryIdx += 1;
-        cycleHits = 5 + Math.floor(rand() * 11); // new random hit count per query
+        cycleHits = 45 + Math.floor(rand() * 45); // new random hit count per query
         intakeBudget += cycleHits; // streams in behind the previous cycle
       }
 
@@ -654,10 +689,7 @@ export function LeadPipelineDiagram({
       if (!s) return null;
       return (
         <div className="pipeline-tip">
-          <div className="flex items-center justify-between gap-3">
-            <span className="font-semibold">{s.handle}</span>
-            <span className="pipeline-tip-badge">{s.score}</span>
-          </div>
+          <div className="font-semibold">{s.handle}</div>
           <div className="text-text-muted">{truncate(s.text, 60)}</div>
         </div>
       );
@@ -669,7 +701,7 @@ export function LeadPipelineDiagram({
           <div className="font-semibold">{[labels.binHigh, labels.binMid, labels.binLow][lane]}</div>
           <div className="text-text-muted">
             {bins.latest[lane]
-              ? `${bins.latest[lane]!.handle} · ${bins.latest[lane]!.score} · ${bins.counts[lane]} ${labels.binCountSuffix}`
+              ? `${bins.latest[lane]!.handle} · ${bins.counts[lane]} ${labels.binCountSuffix}`
               : labels.emptyBin}
           </div>
         </div>
@@ -680,10 +712,7 @@ export function LeadPipelineDiagram({
       <div className="pipeline-tip">
         {s ? (
           <>
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-semibold">{s.handle}</span>
-              <span className="pipeline-tip-badge">{s.score}</span>
-            </div>
+            <div className="font-semibold">{s.handle}</div>
             <div className="text-text-muted">{truncate(s.text, 60)}</div>
           </>
         ) : (
@@ -875,7 +904,14 @@ export function LeadPipelineDiagram({
                 {BIN_LABELS[lane]}
               </text>
               <text x={BIN_X + BIN_W - 16} y={y + 32} textAnchor="end" fontSize={17} style={{ fill: 'var(--text-muted)' }}>
-                {count} {labels.binCountSuffix}
+                <tspan
+                  ref={(el) => {
+                    binCountRefs.current[lane] = el;
+                  }}
+                >
+                  {count}
+                </tspan>{' '}
+                {labels.binCountSuffix}
               </text>
               {binLead ? (
                 <g
@@ -935,8 +971,8 @@ export function LeadPipelineDiagram({
           {labels.statScored}
         </span>
         <span>
-          <span className="font-semibold text-text">
-            {bins.counts[0] + bins.counts[1] + bins.counts[2]}
+          <span ref={binnedRef} className="font-semibold text-text">
+            {leads.length}
           </span>{' '}
           {labels.statQualified}
         </span>
