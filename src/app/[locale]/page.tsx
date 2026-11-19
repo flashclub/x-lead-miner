@@ -23,7 +23,10 @@ interface FaqItem {
   answer: string;
 }
 
-export const revalidate = 1800;
+// Runtime-rendered: the build sandbox has no Workers AI binding and no
+// scraper key, so a prerender would freeze sample leads into the HTML.
+// unstable_cache inside getPipelineLeads still dedupes the heavy fetch.
+export const dynamic = 'force-dynamic';
 
 export default async function LandingPage({
   params,

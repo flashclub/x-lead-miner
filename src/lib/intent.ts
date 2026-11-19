@@ -168,7 +168,7 @@ const getCachedLeads = unstable_cache(
     }
     return leads;
   },
-  ['pipeline-leads'],
+  ['pipeline-leads-v2'],
   { revalidate: 1800 }
 );
 
