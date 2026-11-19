@@ -21,10 +21,6 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
 });
 
-export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
-}
-
 export async function generateMetadata({
   params,
 }: {

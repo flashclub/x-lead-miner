@@ -1,4 +1,4 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -27,6 +27,7 @@ interface FaqItem {
 // scraper key, so a prerender would freeze sample leads into the HTML.
 // unstable_cache inside getPipelineLeads still dedupes the heavy fetch.
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function LandingPage({
   params,
@@ -34,7 +35,6 @@ export default async function LandingPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  setRequestLocale(locale);
 
   const t = await getTranslations('landing');
   const meta = await getTranslations('metadata');

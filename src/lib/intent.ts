@@ -70,7 +70,12 @@ export async function scoreTexts(
   opts: { timeoutMs?: number; perItem?: boolean } = {}
 ): Promise<ScoreResult | null> {
   const { timeoutMs = 15_000, perItem = true } = opts;
-  const native = await scoreNative(texts, perItem);
+  // Workers AI throws transient AiError 3043s — retry once after a beat
+  let native = await scoreNative(texts, perItem);
+  if (!native) {
+    await new Promise((r) => setTimeout(r, 800));
+    native = await scoreNative(texts, perItem);
+  }
   if (native) return native;
   const serviceUrl = (await getServerVar('INTENT_SERVICE_URL'))?.replace(/\/$/, '');
   if (!serviceUrl || texts.length === 0) return null;
@@ -157,20 +162,11 @@ async function fetchScoredLeads(queries: string[]): Promise<ScoredLead[]> {
   return [...byTier(80, 101, 8), ...byTier(60, 80, 6), ...byTier(0, 60, 4)];
 }
 
-/** Landing-page leads, cached 30 min — one search API pass per revalidate.
- *  A run with too few scored leads throws instead of returning [], so
- *  transient outages are never cached. */
-const getCachedLeads = unstable_cache(
-  async (keywords: string[]) => {
-    const leads = await fetchScoredLeads(keywords);
-    if (leads.length < 6) {
-      throw new Error(`only ${leads.length} scored leads — not caching a thin result`);
-    }
-    return leads;
-  },
-  ['pipeline-leads-v2'],
-  { revalidate: 1800 }
-);
+/** Landing-page leads, memoized per Worker isolate for 10 min — the Next
+ *  data cache is read-only on Workers (static assets), so we cache in
+ *  module memory instead: one search pass per isolate per 10 min. */
+const PIPELINE_TTL_MS = 10 * 60 * 1000;
+let pipelineLeadsCache: { at: number; data: ScoredLead[] } | null = null;
 
 /** Sample leads used when live data is unavailable. Never empty overall. */
 /* ---------------- Workers-native scoring ---------------- */
@@ -274,8 +270,15 @@ const PIPELINE_KEYWORDS = [
 ];
 
 export async function getPipelineLeads(): Promise<{ leads: ScoredLead[]; live: boolean }> {
+  if (pipelineLeadsCache && Date.now() - pipelineLeadsCache.at < PIPELINE_TTL_MS) {
+    return { leads: pipelineLeadsCache.data, live: true };
+  }
   try {
-    const leads = await getCachedLeads(PIPELINE_KEYWORDS);
+    const leads = await fetchScoredLeads(PIPELINE_KEYWORDS);
+    if (leads.length < 6) {
+      throw new Error(`only ${leads.length} scored leads — not caching a thin result`);
+    }
+    pipelineLeadsCache = { at: Date.now(), data: leads };
     return { leads, live: true };
   } catch (error) {
     // Observability for the silent degradation — the page discloses samples
