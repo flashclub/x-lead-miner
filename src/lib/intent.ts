@@ -94,22 +94,16 @@ export async function scoreTexts(
   }
 }
 
-/** Attach intent scores from the sidecar. Any failure degrades silently. */
+/** Attach intent scores (Workers AI native first, sidecar fallback).
+ *  Any failure degrades silently. */
 export async function attachIntentScores(posts: XPost[]): Promise<XPost[]> {
-  const serviceUrl = (await getServerVar('INTENT_SERVICE_URL'))?.replace(/\/$/, '');
-  if (!serviceUrl || posts.length === 0) return posts;
-  try {
-    const { status, data } = await sidecarPost(serviceUrl, { texts: posts.map((p) => p.text) }, 15_000);
-    if (status < 200 || status >= 300) return posts;
-    const scores = (data as { scores?: unknown }).scores;
-    if (!Array.isArray(scores) || scores.length !== posts.length) return posts;
-    return posts.map((post, index) => ({
-      ...post,
-      intentScore: typeof scores[index] === 'number' ? scores[index] : undefined,
-    }));
-  } catch {
-    return posts;
-  }
+  if (posts.length === 0) return posts;
+  const result = await scoreTexts(posts.map((p) => p.text));
+  if (!result) return posts;
+  return posts.map((post, index) => ({
+    ...post,
+    intentScore: result.scores[index],
+  }));
 }
 
 export interface ScoredLead {

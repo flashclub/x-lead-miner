@@ -980,7 +980,6 @@ export function LeadPipelineDiagram({
           {labels.statQualified}
         </span>
       </div>
-      {!live && <p className="mt-2 text-center text-sm text-text-subtle">{labels.sampleNote}</p>}
     </div>
   );
 }
