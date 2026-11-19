@@ -126,20 +126,35 @@ export interface ScoredLead {
  * unstable_cache caches empty results too, which would pin the landing page
  * to samples for a whole revalidate window (verified 2026-11-16).
  */
-async function fetchScoredLeads(query: string): Promise<ScoredLead[]> {
+async function fetchScoredLeads(queries: string[]): Promise<ScoredLead[]> {
   const apiKey = await getServerVar('SCRAPER_API_KEY');
   if (!apiKey) throw new Error('SCRAPER_API_KEY is not configured');
   const client = new XApiClient({ apiKey });
-  const page = await client.search(query, { searchType: 'Latest' });
-  const scored = await attachIntentScores(page.posts.slice(0, 40));
-  const eligible = scored
-    .filter((p) => typeof p.intentScore === 'number' && p.text.length >= 12)
-    .map((p) => ({
-      handle: `@${p.author.handle || 'user'}`,
-      text: p.text.replace(/\s+/g, ' ').slice(0, 90),
-      score: Math.round((p.intentScore as number) * 100),
-      sourceQuery: query,
-    }));
+  // One real search PER keyword so every lead carries its own provenance —
+  // a single OR-query would make all tooltips show the same expression.
+  const eligible: {
+    handle: string;
+    text: string;
+    score: number;
+    sourceQuery: string;
+  }[] = [];
+  for (const keyword of queries) {
+    try {
+      const page = await client.search(keyword, { searchType: 'Latest' });
+      const scored = await attachIntentScores(page.posts.slice(0, 14));
+      for (const p of scored) {
+        if (typeof p.intentScore !== 'number' || p.text.length < 12) continue;
+        eligible.push({
+          handle: `@${p.author.handle || 'user'}`,
+          text: p.text.replace(/\s+/g, ' ').slice(0, 90),
+          score: Math.round((p.intentScore as number) * 100),
+          sourceQuery: keyword,
+        });
+      }
+    } catch (err) {
+      console.warn(`[pipeline] keyword search failed ("${keyword}"):`, err instanceof Error ? err.message : err);
+    }
+  }
   // Balanced across score tiers so every bin in the landing animation has
   // members — a first-come selection starves the strong-intent bin for long
   // stretches because real posts mostly score mid/low (verified 2026-11-16).
@@ -152,8 +167,8 @@ async function fetchScoredLeads(query: string): Promise<ScoredLead[]> {
  *  A run with too few scored leads throws instead of returning [], so
  *  transient outages are never cached. */
 const getCachedLeads = unstable_cache(
-  async (query: string) => {
-    const leads = await fetchScoredLeads(query);
+  async (keywords: string[]) => {
+    const leads = await fetchScoredLeads(keywords);
     if (leads.length < 6) {
       throw new Error(`only ${leads.length} scored leads — not caching a thin result`);
     }
@@ -258,10 +273,15 @@ export const SAMPLE_LEADS: ScoredLead[] = [
  * the scraper key, the X API or the intent sidecar are unavailable, so the
  * marketing page never breaks.
  */
+const PIPELINE_KEYWORDS = [
+  'is there an app that',
+  'anyone recommend',
+  'alternative to',
+];
+
 export async function getPipelineLeads(): Promise<{ leads: ScoredLead[]; live: boolean }> {
-  const query = '"is there an app that" OR "anyone recommend" lang:en -filter:replies';
   try {
-    const leads = await getCachedLeads(query);
+    const leads = await getCachedLeads(PIPELINE_KEYWORDS);
     return { leads, live: true };
   } catch (error) {
     // Observability for the silent degradation — the page discloses samples
