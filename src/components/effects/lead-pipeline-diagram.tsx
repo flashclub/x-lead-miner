@@ -723,7 +723,7 @@ export function LeadPipelineDiagram({
         <div className="mt-1 text-[13px] font-medium" style={{ color: 'var(--accent)' }}>
           {labels.scoringHint.replace(
             '@query',
-            inputTextRef.current?.textContent || QUERIES[0]
+            active.lead?.sourceQuery || inputTextRef.current?.textContent || QUERIES[0]
           )}
         </div>
       </div>

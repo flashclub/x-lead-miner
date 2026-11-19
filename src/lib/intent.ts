@@ -116,6 +116,8 @@ export interface ScoredLead {
   handle: string;
   text: string;
   score: number;
+  /** the search expression this lead was actually retrieved with */
+  sourceQuery?: string;
 }
 
 /**
@@ -136,6 +138,7 @@ async function fetchScoredLeads(query: string): Promise<ScoredLead[]> {
       handle: `@${p.author.handle || 'user'}`,
       text: p.text.replace(/\s+/g, ' ').slice(0, 90),
       score: Math.round((p.intentScore as number) * 100),
+      sourceQuery: query,
     }));
   // Balanced across score tiers so every bin in the landing animation has
   // members — a first-come selection starves the strong-intent bin for long
@@ -236,18 +239,18 @@ async function scoreNative(
 }
 
 export const SAMPLE_LEADS: ScoredLead[] = [
-  { handle: '@buildwithsara', text: 'looking for a cheaper alternative to Ahrefs…', score: 91 },
-  { handle: '@opsbyjake', text: 'wish an app auto-reconciled Stripe payouts', score: 87 },
-  { handle: '@saasdad', text: 'our ticketing stack is a mess, willing to pay', score: 89 },
-  { handle: '@indiemarla', text: 'any tool that turns X Spaces into blog posts?', score: 84 },
-  { handle: '@nocodegen', text: 'is there an app that turns Figma into React?', score: 82 },
-  { handle: '@growthlena', text: 'hate how our CRM dedupes. any alternative?', score: 78 },
-  { handle: '@deckhacker', text: 'need a tool to track competitor pricing weekly', score: 63 },
-  { handle: '@revenuekit', text: 'anyone know an app for invoice milestones?', score: 58 },
-  { handle: '@moarmetrics', text: 'my analytics stack needs cleanup, any recs?', score: 55 },
-  { handle: '@shipfast_ed', text: 'is there a bot that replies to reviews for me?', score: 51 },
-  { handle: '@lonelaunch', text: 'who else refreshing Product Hunt all day', score: 21 },
-  { handle: '@notionfanatic', text: 'spending sunday reorganizing my workspace lol', score: 12 },
+  { sourceQuery: 'alternative to', handle: '@buildwithsara', text: 'looking for a cheaper alternative to Ahrefs…', score: 91 },
+  { sourceQuery: 'I wish there was', handle: '@opsbyjake', text: 'wish an app auto-reconciled Stripe payouts', score: 87 },
+  { sourceQuery: 'worth paying for', handle: '@saasdad', text: 'our ticketing stack is a mess, willing to pay', score: 89 },
+  { sourceQuery: 'is there a tool that', handle: '@indiemarla', text: 'any tool that turns X Spaces into blog posts?', score: 84 },
+  { sourceQuery: 'is there an app that', handle: '@nocodegen', text: 'is there an app that turns Figma into React?', score: 82 },
+  { sourceQuery: 'switching from', handle: '@growthlena', text: 'hate how our CRM dedupes. any alternative?', score: 78 },
+  { sourceQuery: 'looking for a tool', handle: '@deckhacker', text: 'need a tool to track competitor pricing weekly', score: 63 },
+  { sourceQuery: 'anyone know an app', handle: '@revenuekit', text: 'anyone know an app for invoice milestones?', score: 58 },
+  { sourceQuery: 'anyone recommend', handle: '@moarmetrics', text: 'my analytics stack needs cleanup, any recs?', score: 55 },
+  { sourceQuery: 'is there a tool that', handle: '@shipfast_ed', text: 'is there a bot that replies to reviews for me?', score: 51 },
+  { sourceQuery: 'anyone know an app', handle: '@lonelaunch', text: 'who else refreshing Product Hunt all day', score: 21 },
+  { sourceQuery: 'switching from', handle: '@notionfanatic', text: 'spending sunday reorganizing my workspace lol', score: 12 },
 ];
 
 /**
