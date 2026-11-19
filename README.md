@@ -77,6 +77,20 @@ Browser ──▶ Next.js 15 (OpenNext) ──▶ Cloudflare Workers (free tier)
 | ML | sentence-transformers (embeddinggemma-2, frozen) + PyTorch MLP head |
 | serving | FastAPI sidecar, CPU fp32 inference |
 
+## Development workflow
+
+代码的主开发目录是 monoboard 工作区（`apps/x-lead-miner`）。发布迭代：
+
+```bash
+# 在 monoboard 改完代码后，一条命令同步 + 提交 + 自动部署：
+/Users/deepmac/Documents/code/x-lead-miner-site/sync-from-monoboard.sh "feat: your change"
+```
+
+- 构建永远在 GitHub Actions 免费 runner 上完成，**本地零构建**
+- push 即部署：CI 构建通过后自动上线 Workers（失败则不部署）
+- 以下文件在本仓库维护、**永不被同步覆盖**（线上打分与部署配置）：
+  `wrangler.jsonc` · `src/lib/intent.ts` · `src/lib/intent-head-weights.json`
+
 ## Run locally
 
 ```bash
