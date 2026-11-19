@@ -127,18 +127,18 @@ const INTAKE_FROM: Pt = { x: CONNECTOR.x, y: CONNECTOR.y0 };
 
 /* ---------------- timing ---------------- */
 
-const TYPE_CHAR_S = 0.042; // s per typed character
-const HIT_HOLD = 0.6; // s the "N hits" line holds before the next query types
-const INTAKE_INTERVAL = 0.2; // s between leads falling into the pool
-const INTAKE_DURATION = 0.55; // s to fall into the pool
-const CYCLE_TAIL = 0.4; // s of quiet before the next query starts typing
+const TYPE_CHAR_S = 0.03; // s per typed character
+const HIT_HOLD = 0.45; // s the "N hits" line holds before the next query types
+const INTAKE_INTERVAL = 0.09; // s between leads falling into the pool (~11/s)
+const INTAKE_DURATION = 0.3; // s to fall into the pool
+const CYCLE_TAIL = 0.25; // s of quiet before the next query starts typing
 // consumed faster than any intake rate — the model is never the bottleneck
 // (effect design rule: particles are created freely, no capacity gates)
-const TRANSIT_DURATION = 0.55; // s pool-dot → model (eased)
-const FLY_DURATION = 0.9; // s model → bin
+const TRANSIT_DURATION = 0.3; // s pool-dot → model (eased)
+const FLY_DURATION = 0.45; // s model → bin
 const POOL_SLOTS = 60; // visual buffer dots; recycled oldest-first when full
 const POOL_PREFILL = 8; // dots shown before the first retrieval lands
-const DOT_LIFETIME = 7; // s a pool dot stays before it flows away into the model
+const DOT_LIFETIME = 2.2; // s a pool dot stays before it flows away into the model
 const HIT_RADIUS = 14;
 
 const laneOf = (score: number) => (score >= 80 ? 0 : score >= 60 ? 1 : 2);
@@ -176,12 +176,17 @@ interface BinState {
 }
 
 function initBins(leads: ScoredLead[]): BinState {
+  // Open mid-stream: the miner has "already been running", so the tier
+  // boxes start seeded with the real score distribution of the fetched
+  // leads (and the stats agree with the boxes from frame one).
+  const counts: [number, number, number] = [0, 0, 0];
   const latest: (ScoredLead | null)[] = [null, null, null];
   for (const l of leads) {
+    counts[laneOf(l.score)] += 1;
     const lane = laneOf(l.score);
     if (!latest[lane]) latest[lane] = l;
   }
-  return { counts: [0, 0, 0], latest, seq: [-1, -2, -3] };
+  return { counts, latest, seq: [-1, -2, -3] };
 }
 
 type HoverTarget =
@@ -225,7 +230,7 @@ export function LeadPipelineDiagram({
   const flyLayerRef = useRef<SVGGElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const poolCountRef = useRef<HTMLSpanElement | null>(null);
-  const poolArrivals = useRef(Math.min(POOL_PREFILL, leads.length));
+  const poolArrivals = useRef(leads.length); // seeded: mid-stream at load
   const inputTextRef = useRef<SVGTSpanElement | null>(null);
   const hitCountRef = useRef<SVGTSpanElement | null>(null);
   const hitTextRef = useRef<SVGTextElement | null>(null);
@@ -344,7 +349,9 @@ export function LeadPipelineDiagram({
     for (let i = 0; i < Math.min(POOL_PREFILL, leads.length); i++) {
       const slot = takeSlot();
       poolSlotLead.current[slot] = leads[i]; // pre-filled dots carry real posts
-      slotBornAt[slot] = 0; // lifetime runs from animation start
+      // staggered births IN THE PAST: the first dot flows to the model at
+      // ~0.3s, then one every 0.3s — the stream is alive from frame one
+      slotBornAt[slot] = 0.3 * (i + 1) - DOT_LIFETIME;
     }
 
     /* pool slot positions — fixed per slot, scattered across the rect */
@@ -924,7 +931,7 @@ export function LeadPipelineDiagram({
       {/* stats: derived from bins state — always consistent with the bins */}
       <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-base text-text-muted">
         <span>
-          <span ref={poolCountRef} className="font-semibold text-text">{Math.min(POOL_PREFILL, leads.length)}</span>{' '}
+          <span ref={poolCountRef} className="font-semibold text-text">{leads.length}</span>{' '}
           {labels.statScored}
         </span>
         <span>
