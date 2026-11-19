@@ -177,17 +177,12 @@ interface BinState {
 }
 
 function initBins(leads: ScoredLead[]): BinState {
-  const counts: [number, number, number] = [
-    Math.round(leads.length * TIER_RATIO[0]),
-    Math.round(leads.length * TIER_RATIO[1]),
-    Math.round(leads.length * TIER_RATIO[2]),
-  ];
   const latest: (ScoredLead | null)[] = [null, null, null];
   for (const l of leads) {
     const lane = laneOf(l.score);
     if (!latest[lane]) latest[lane] = l;
   }
-  return { counts, latest, seq: [-1, -2, -3] };
+  return { counts: [0, 0, 0], latest, seq: [-1, -2, -3] };
 }
 
 type HoverTarget =
