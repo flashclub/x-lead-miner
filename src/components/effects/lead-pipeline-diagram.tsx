@@ -277,13 +277,10 @@ export function LeadPipelineDiagram({
     // Animation balance: track when each bin last docked; the ambient feeder
     // serves the least-recently-fed lane so no bin sits static for long.
     const lastDockAt: [number, number, number] = [-Infinity, -Infinity, -Infinity];
-    let pooledTotal = 0; // cumulative intakes — drives the pool stat upward
     // Funnel stat: counts high/mid docks only (the qualified tiers) — the
     // watchlist tier is the noise the funnel filters out. Starts seeded at
     // the 1:3:6 initial split, grows at 40% of the pooled rate → pooled
     // leads binned, always.
-    const qualifiedSeed = Math.round(total * (TIER_RATIO[0] + TIER_RATIO[1]));
-    let qualifiedTotal = 0; // docks into high/mid since load
     let rngState = 20261116;
     const rand = () => {
       rngState = (rngState * 1103515245 + 12345) % 2147483648;
@@ -438,7 +435,6 @@ export function LeadPipelineDiagram({
           if (el) el.setAttribute('opacity', '0');
           poolSlotLead.current[it.slot] = leads[it.leadIdx];
           slotBornAt[it.slot] = elapsed;
-          pooledTotal += 1;
           miningQueue.push({ lead: leads[it.leadIdx], slot: it.slot });
         }
       }
@@ -502,7 +498,6 @@ export function LeadPipelineDiagram({
           const slot = takeSlot();
           poolSlotLead.current[slot] = picked.lead; // ambient signals keep the pool alive too
           slotBornAt[slot] = elapsed; // birth time drives the pop-in/lifetime ramp
-          pooledTotal += 1;
           item = { lead: picked.lead, slot };
         } else {
           fresh = true;
@@ -546,14 +541,6 @@ export function LeadPipelineDiagram({
           if (liveIdx >= 0) fliesLiveRef.current.splice(liveIdx, 1);
           const lane = fly.lane;
           lastDockAt[lane] = elapsed;
-          // funnel stat — high/mid docks only, perfectly synced with the
-          // graphic (one increment per landing particle into those tiers)
-          if (lane <= 1) {
-            qualifiedTotal += 1;
-            if (qualifiedTextRef.current) {
-              qualifiedTextRef.current.textContent = String(qualifiedSeed + qualifiedTotal);
-            }
-          }
           setBins((prev) => {
             const counts: [number, number, number] = [...prev.counts];
             counts[lane] += 1;
@@ -571,10 +558,6 @@ export function LeadPipelineDiagram({
         cycleStart = elapsed;
         queryIdx += 1;
         cycleHits = 5 + Math.floor(rand() * 11); // new random hit count per query
-      }
-
-      if (pooledTextRef.current) {
-        pooledTextRef.current.textContent = String(total + pooledTotal);
       }
 
       if (running) raf = requestAnimationFrame(tick);

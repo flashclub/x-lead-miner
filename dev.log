@@ -489,3 +489,7 @@ Using vars defined in .dev.vars
  GET /icon.svg?ee6b6aec6ad60040 200 in 8ms
  ✓ Compiled in 374ms (823 modules)
  GET /zh 200 in 203ms
+ ✓ Compiled in 287ms (823 modules)
+ GET /zh 200 in 165ms
+ ✓ Compiled in 188ms (823 modules)
+ GET /zh 200 in 120ms
