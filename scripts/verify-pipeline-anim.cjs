@@ -1,3 +1,9 @@
+// Automated assertions for the landing pipeline animation.
+// Usage: node scripts/verify-pipeline-anim.cjs  (dev server must run on :3019)
+// Requires puppeteer-core + local Chrome. Asserts, sampled over ~45s:
+//   A1 pooled >= binned            (a lead must be pooled before it is binned)
+//   A2 binned == sum of bin counts (the stat equals the three tier boxes)
+//   A3 pool visibly populated      (>=3 live dots — no flights from an empty pool)
 const puppeteer = require('puppeteer-core');
 
 (async () => {
@@ -12,38 +18,42 @@ const puppeteer = require('puppeteer-core');
 
   const read = () =>
     page.evaluate(() => {
-      const stats = Array.from(document.querySelectorAll('.font-mono span')).map((e) =>
-        e.textContent.replace(/\s+/g, ' ').trim()
-      );
-      const line = stats.join(' | ');
+      const line = Array.from(document.querySelectorAll('.font-mono span'))
+        .map((e) => e.textContent.replace(/\s+/g, ' ').trim())
+        .join(' | ');
       const bins = Array.from(document.querySelectorAll('svg text'))
         .map((t) => t.textContent.replace(/\s+/g, ' ').trim())
-        .filter((t) => /^\d+ 条$/.test(t));
+        .filter((t) => /^\d+ 条$/.test(t))
+        .map((t) => parseInt(t));
       const hits = Array.from(document.querySelectorAll('svg text'))
         .map((t) => t.textContent.replace(/\s+/g, ' ').trim())
         .find((t) => /条命中/.test(t));
-      return { line, bins, hits };
+      const poolDots = Array.from(document.querySelectorAll('svg circle')).filter(
+        (c) => parseFloat(c.getAttribute('opacity') || '0') > 0.05 && c.getAttribute('r') === '4'
+      ).length;
+      return { line, bins, hits, poolDots };
     });
 
-  // sample at 10s / 25s / 45s
+  let failures = 0;
   for (const wait of [10000, 15000, 20000]) {
     await new Promise((r) => setTimeout(r, wait));
     const s = await read();
     const pooled = (s.line.match(/(\d+) 条真实线索已入池/) || [])[1];
     const binned = (s.line.match(/(\d+) 条已打分入档/) || [])[1];
-    const binNums = s.bins.map((b) => parseInt(b));
-    const binSum = binNums.reduce((a, b) => a + (b || 0), 0);
-    const checks = [
-      `pooled=${pooled}`,
-      `binned=${binned}`,
-      `bins=[${binNums.join(',')}] sum=${binSum}`,
-      pooled && binned ? `A1 pooled>=binned: ${+pooled >= +binned ? 'PASS' : 'FAIL'}` : 'A1 ?',
-      binned ? `A2 binned==binSum: ${+binned === binSum ? 'PASS' : 'FAIL'}` : 'A2 ?',
-      `hits: ${s.hits || '-'}`,
-    ];
-    console.log(checks.join('  '));
+    const binSum = s.bins.reduce((a, b) => a + (b || 0), 0);
+    const a1 = pooled && binned && +pooled >= +binned;
+    const a2 = binned && +binned === binSum;
+    const a3 = s.poolDots >= 3;
+    if (!a1 || !a2 || !a3) failures += 1;
+    console.log(
+      `pooled=${pooled} binned=${binned} bins=[${s.bins.join(',')}] sum=${binSum} ` +
+        `poolDots=${s.poolDots} hits="${s.hits || '-'}" | ` +
+        `A1 pooled>=binned:${a1 ? 'PASS' : 'FAIL'} A2 binned==sum:${a2 ? 'PASS' : 'FAIL'} A3 pool alive:${a3 ? 'PASS' : 'FAIL'}`
+    );
   }
   await browser.close();
+  console.log(failures === 0 ? 'ALL PASS' : `${failures} SAMPLE(S) FAILED`);
+  process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => {
   console.error('ERR', e.message);
   process.exit(1);

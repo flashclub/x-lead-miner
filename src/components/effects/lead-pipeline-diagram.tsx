@@ -129,12 +129,11 @@ const INTAKE_FROM: Pt = { x: CONNECTOR.x, y: CONNECTOR.y0 };
 
 const TYPE_CHAR_S = 0.042; // s per typed character
 const HIT_HOLD = 0.6; // s the "N hits" line holds before the next query types
-const INTAKE_INTERVAL = 0.45; // s between leads falling into the pool
+const INTAKE_INTERVAL = 0.2; // s between leads falling into the pool
 const INTAKE_DURATION = 0.55; // s to fall into the pool
 const CYCLE_TAIL = 0.4; // s of quiet before the next query starts typing
 // consumed faster than any intake rate — the model is never the bottleneck
 // (effect design rule: particles are created freely, no capacity gates)
-const MODEL_RATE = 0.15;
 const TRANSIT_DURATION = 0.55; // s pool-dot → model (eased)
 const FLY_DURATION = 0.9; // s model → bin
 const POOL_SLOTS = 60; // visual buffer dots; recycled oldest-first when full
@@ -257,11 +256,9 @@ export function LeadPipelineDiagram({
     let queryIdx = 0;
     let intakeCursor = 0; // rotating pointer into `leads`
     let lastIntake = -1;
-    let intakeRemaining = 0; // posts still to fall this cycle (= cycleHits)
     const intakes: { slot: number; born: number; leadIdx: number; intakeSlot: number }[] = [];
     let arrivalSlot = POOL_PREFILL; // next virgin pool slot (dots grow 8 → 60)
     const freeSlots: number[] = []; // slots released by expired dots, LIFO
-    let lastConsume = -1;
     /** Take a free slot if one exists, otherwise claim the next virgin one. */
     const takeSlot = () => {
       if (freeSlots.length > 0) return freeSlots.pop() as number;
@@ -269,9 +266,7 @@ export function LeadPipelineDiagram({
       arrivalSlot += 1;
       return slot;
     };
-    let ambientCursor = 0;
     const slotBornAt: (number | undefined)[] = [];
-    const miningQueue: { lead: ScoredLead; slot: number }[] = []; // FIFO awaiting scoring
     // Animation balance: track when each bin last docked; the ambient feeder
     // serves the least-recently-fed lane so no bin sits static for long.
     const lastDockAt: [number, number, number] = [-Infinity, -Infinity, -Infinity];
@@ -299,21 +294,7 @@ export function LeadPipelineDiagram({
     };
     // decorative per-cycle hit count — random each query so it reads alive
     let cycleHits = 5 + Math.floor(rand() * 11);
-    intakeRemaining = cycleHits;
-    const laneCursor = [0, 0, 0];
-    /** Next real lead for a lane; falls back to any lead (docked by its own
-     *  real tier) when the current fetch has no member for that lane. */
-    const nextLeadForLane = (lane: number): { lead: ScoredLead; lane: number } => {
-      const members = leads.filter((l) => laneOf(l.score) === lane);
-      if (members.length > 0) {
-        const lead = members[laneCursor[lane] % members.length];
-        laneCursor[lane] += 1;
-        return { lead, lane };
-      }
-      const lead = leads[ambientCursor % leads.length];
-      ambientCursor += 1;
-      return { lead, lane: laneOf(lead.score) };
-    };
+    let intakeBudget = cycleHits; // hits stream into the pool at intake pace
     const transits: { key: number; el: SVGGElement; born: number; from: Pt; lane: number; lineIdx: number; leadIdx: number; fresh: boolean }[] = [];
     const flies: { key: number; el: SVGGElement; born: number; lane: number; leadIdx: number; fresh: boolean; live: FlyLive }[] = [];
     let lastLineIdx = -1; // no immediate repeat — keeps the flow organic
@@ -386,8 +367,8 @@ export function LeadPipelineDiagram({
       const typeDur = q.length * TYPE_CHAR_S;
       const hitAt = typeDur;
       const hitEnd = hitAt + HIT_HOLD;
-      // the cycle must last long enough for ALL cycleHits posts to fall in
-      const cycleEnd = hitEnd + cycleHits * INTAKE_INTERVAL + CYCLE_TAIL;
+      const cycleEnd = hitEnd + CYCLE_TAIL; // next query types right away —
+      // intake keeps streaming into the pool in the background
       const ct = elapsed - cycleStart;
 
       // 1) typewriter input — steady text, caret transparent (per design)
@@ -403,20 +384,16 @@ export function LeadPipelineDiagram({
         hitTextRef.current.setAttribute('opacity', ct >= hitAt && ct <= hitEnd ? '1' : '0');
       }
 
-      // 2) intake — exactly cycleHits posts fall into the pool this cycle,
-      // one every INTAKE_INTERVAL after the query finishes typing, so the
-      // "N hits" label and the dots entering the pool always agree.
-      if (
-        intakeRemaining > 0 &&
-        ct >= hitAt &&
-        elapsed - lastIntake >= INTAKE_INTERVAL
-      ) {
+      // 2) intake — every hit eventually lands in the pool, one dot per
+      // INTAKE_INTERVAL; cycles overlap freely (the next query types while
+      // the previous hits are still streaming in).
+      if (intakeBudget > 0 && elapsed - lastIntake >= INTAKE_INTERVAL) {
         const intakeSlot = [0, 1, 2, 3, 4, 5].find(
           (s) => !intakes.some((t) => t.intakeSlot === s)
         );
         if (intakeSlot !== undefined) {
           lastIntake = elapsed;
-          intakeRemaining -= 1;
+          intakeBudget -= 1;
           const slot = takeSlot();
           intakes.push({
             slot,
@@ -441,7 +418,6 @@ export function LeadPipelineDiagram({
           if (el) el.setAttribute('opacity', '0');
           poolSlotLead.current[it.slot] = leads[it.leadIdx];
           slotBornAt[it.slot] = elapsed;
-          miningQueue.push({ lead: leads[it.leadIdx], slot: it.slot });
           poolArrivals.current += 1; // cumulative "pooled" stat
           if (poolCountRef.current) {
             poolCountRef.current.textContent = String(poolArrivals.current);
@@ -490,42 +466,6 @@ export function LeadPipelineDiagram({
         hitPos.current.pool[s] = { x, y };
       }
 
-      // 4) the model continuously consumes — FIFO from the mining queue,
-      // ambient fallback from the cycling leads when the queue runs dry
-      // (the signal stream between module and model never stalls)
-      if (elapsed - lastConsume >= MODEL_RATE) {
-        // The model routes at the directed 1:3:6 ratio; the ambient feeder
-        // picks a real lead matching the chosen lane so the fly's tooltip
-        // agrees with the bin it docks into.
-        let exitLane = nextRatioLane();
-        // fresh = a newly-pooled signal from the mining queue (counts toward
-        // the qualified stat); ambient re-surfacing never double-counts
-        let fresh = false;
-        let item: { lead: ScoredLead; slot: number } | undefined = miningQueue.length > 0 ? miningQueue.shift() : undefined;
-        if (!item) {
-          const picked = nextLeadForLane(exitLane);
-          exitLane = picked.lane;
-          const slot = takeSlot();
-          poolSlotLead.current[slot] = picked.lead; // ambient signals keep the pool alive too
-          slotBornAt[slot] = elapsed; // birth time drives the pop-in/lifetime ramp
-          poolArrivals.current += 1; // it visibly enters the pool — count it
-          if (poolCountRef.current) {
-            poolCountRef.current.textContent = String(poolArrivals.current);
-          }
-          item = { lead: picked.lead, slot };
-        } else {
-          fresh = true;
-        }
-        lastConsume = elapsed;
-        spawnTransit(slotPos[item.slot], exitLane, leads.indexOf(item.lead), fresh);
-        // the consumed signal has LEFT the pool — vacate its slot so the
-        // lifetime-expiry path can never dock the same lead a second time
-        const dotEl = flowRefs.current[item.slot];
-        if (dotEl) dotEl.setAttribute('opacity', '0');
-        poolSlotLead.current[item.slot] = null;
-        slotBornAt[item.slot] = undefined;
-        freeSlots.push(item.slot);
-      }
       for (let k = transits.length - 1; k >= 0; k--) {
         const tr = transits[k];
         const p = Math.min(1, (elapsed - tr.born) / TRANSIT_DURATION);
@@ -579,7 +519,7 @@ export function LeadPipelineDiagram({
         cycleStart = elapsed;
         queryIdx += 1;
         cycleHits = 5 + Math.floor(rand() * 11); // new random hit count per query
-        intakeRemaining = cycleHits;
+        intakeBudget += cycleHits; // streams in behind the previous cycle
       }
 
       if (running) raf = requestAnimationFrame(tick);
