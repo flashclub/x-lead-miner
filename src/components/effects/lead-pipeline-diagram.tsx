@@ -518,6 +518,13 @@ export function LeadPipelineDiagram({
         }
         lastConsume = elapsed;
         spawnTransit(slotPos[item.slot], exitLane, leads.indexOf(item.lead), fresh);
+        // the consumed signal has LEFT the pool — vacate its slot so the
+        // lifetime-expiry path can never dock the same lead a second time
+        const dotEl = flowRefs.current[item.slot];
+        if (dotEl) dotEl.setAttribute('opacity', '0');
+        poolSlotLead.current[item.slot] = null;
+        slotBornAt[item.slot] = undefined;
+        freeSlots.push(item.slot);
       }
       for (let k = transits.length - 1; k >= 0; k--) {
         const tr = transits[k];
