@@ -102,7 +102,7 @@
       "statScored": "real leads pooled",
       "statQualified": "scored & binned",
       "aria": "Animation: raw X posts flow from a lead pool on the left through the intent model; high-intent leads emerge ranked on the right while low-scoring posts fall away.",
-      "scoringHint": "scoring… posts above the intent threshold join the queue",
+      "scoringHint": "results for “@query”",
       "binHigh": "High intent · score ≥ 80",
       "binMid": "Mid intent · 60–79",
       "binLow": "Watchlist · < 60",

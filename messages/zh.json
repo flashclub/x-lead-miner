@@ -102,7 +102,7 @@
       "statScored": "条真实线索已入池",
       "statQualified": "条已打分入档",
       "aria": "动画：X 上的原始帖子从左侧线索池流出，经中央意图模型打分，高意向线索以分数排序后在右侧堆叠成队列，低分帖子被过滤掉。",
-      "scoringHint": "打分中… 达到意向阈值即进入队列",
+      "scoringHint": "“@query”搜索结果",
       "binHigh": "强意向 · score ≥ 80",
       "binMid": "中意向 · 60–79",
       "binLow": "待观察 · < 60",
