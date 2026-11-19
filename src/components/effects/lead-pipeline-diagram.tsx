@@ -226,7 +226,7 @@ export function LeadPipelineDiagram({
   const flyLayerRef = useRef<SVGGElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const poolCountRef = useRef<HTMLSpanElement | null>(null);
-  const poolArrivals = useRef(0);
+  const poolArrivals = useRef(Math.min(POOL_PREFILL, leads.length));
   const inputTextRef = useRef<SVGTSpanElement | null>(null);
   const hitCountRef = useRef<SVGTSpanElement | null>(null);
   const hitTextRef = useRef<SVGTextElement | null>(null);
@@ -257,6 +257,7 @@ export function LeadPipelineDiagram({
     let queryIdx = 0;
     let intakeCursor = 0; // rotating pointer into `leads`
     let lastIntake = -1;
+    let intakeRemaining = 0; // posts still to fall this cycle (= cycleHits)
     const intakes: { slot: number; born: number; leadIdx: number; intakeSlot: number }[] = [];
     let arrivalSlot = POOL_PREFILL; // next virgin pool slot (dots grow 8 → 60)
     const freeSlots: number[] = []; // slots released by expired dots, LIFO
@@ -298,6 +299,7 @@ export function LeadPipelineDiagram({
     };
     // decorative per-cycle hit count — random each query so it reads alive
     let cycleHits = 5 + Math.floor(rand() * 11);
+    intakeRemaining = cycleHits;
     const laneCursor = [0, 0, 0];
     /** Next real lead for a lane; falls back to any lead (docked by its own
      *  real tier) when the current fetch has no member for that lane. */
@@ -384,7 +386,8 @@ export function LeadPipelineDiagram({
       const typeDur = q.length * TYPE_CHAR_S;
       const hitAt = typeDur;
       const hitEnd = hitAt + HIT_HOLD;
-      const cycleEnd = hitEnd + CYCLE_TAIL;
+      // the cycle must last long enough for ALL cycleHits posts to fall in
+      const cycleEnd = hitEnd + cycleHits * INTAKE_INTERVAL + CYCLE_TAIL;
       const ct = elapsed - cycleStart;
 
       // 1) typewriter input — steady text, caret transparent (per design)
@@ -400,14 +403,20 @@ export function LeadPipelineDiagram({
         hitTextRef.current.setAttribute('opacity', ct >= hitAt && ct <= hitEnd ? '1' : '0');
       }
 
-      // 2) continuous intake — every surfaced lead falls into the pool as a
-      // dot, one by one, all cycle long (no burst-then-silence)
-      if (elapsed - lastIntake >= INTAKE_INTERVAL) {
+      // 2) intake — exactly cycleHits posts fall into the pool this cycle,
+      // one every INTAKE_INTERVAL after the query finishes typing, so the
+      // "N hits" label and the dots entering the pool always agree.
+      if (
+        intakeRemaining > 0 &&
+        ct >= hitAt &&
+        elapsed - lastIntake >= INTAKE_INTERVAL
+      ) {
         const intakeSlot = [0, 1, 2, 3, 4, 5].find(
           (s) => !intakes.some((t) => t.intakeSlot === s)
         );
         if (intakeSlot !== undefined) {
           lastIntake = elapsed;
+          intakeRemaining -= 1;
           const slot = takeSlot();
           intakes.push({
             slot,
@@ -433,6 +442,10 @@ export function LeadPipelineDiagram({
           poolSlotLead.current[it.slot] = leads[it.leadIdx];
           slotBornAt[it.slot] = elapsed;
           miningQueue.push({ lead: leads[it.leadIdx], slot: it.slot });
+          poolArrivals.current += 1; // cumulative "pooled" stat
+          if (poolCountRef.current) {
+            poolCountRef.current.textContent = String(poolArrivals.current);
+          }
         }
       }
 
@@ -495,6 +508,10 @@ export function LeadPipelineDiagram({
           const slot = takeSlot();
           poolSlotLead.current[slot] = picked.lead; // ambient signals keep the pool alive too
           slotBornAt[slot] = elapsed; // birth time drives the pop-in/lifetime ramp
+          poolArrivals.current += 1; // it visibly enters the pool — count it
+          if (poolCountRef.current) {
+            poolCountRef.current.textContent = String(poolArrivals.current);
+          }
           item = { lead: picked.lead, slot };
         } else {
           fresh = true;
@@ -555,6 +572,7 @@ export function LeadPipelineDiagram({
         cycleStart = elapsed;
         queryIdx += 1;
         cycleHits = 5 + Math.floor(rand() * 11); // new random hit count per query
+        intakeRemaining = cycleHits;
       }
 
       if (running) raf = requestAnimationFrame(tick);
@@ -959,9 +977,7 @@ export function LeadPipelineDiagram({
       {/* stats: derived from bins state — always consistent with the bins */}
       <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-base text-text-muted">
         <span>
-          <span className="font-semibold text-text">
-            {bins.counts[0] + bins.counts[1] + bins.counts[2]}
-          </span>{' '}
+          <span ref={poolCountRef} className="font-semibold text-text">{Math.min(POOL_PREFILL, leads.length)}</span>{' '}
           {labels.statScored}
         </span>
         <span>

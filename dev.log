@@ -576,3 +576,222 @@ Using vars defined in .dev.vars
  GET /zh 200 in 117ms
  ✓ Compiled in 232ms (840 modules)
  GET /zh 200 in 121ms
+ GET /zh 200 in 213ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 22ms
+ GET /zh 200 in 102ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 9ms
+ GET /zh 200 in 117ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 6ms
+ GET /zh 200 in 112ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 5ms
+ GET /zh 200 in 214ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 12ms
+ GET /zh 200 in 118ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 8ms
+ GET /zh 200 in 134ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 14ms
+ ✓ Compiled in 507ms (823 modules)
+ GET /zh 200 in 236ms
+ ✓ Compiled in 269ms (823 modules)
+ GET /zh 200 in 184ms
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/next-devtools/userspace/app/segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '2494491361'
+}
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/next-devtools/userspace/app/segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '2518172004'
+}
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/next-devtools/userspace/app/segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '2518172004'
+}
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/next-devtools/userspace/app/segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '2518172004'
+}
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/next-devtools/userspace/app/segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '2494491361'
+}
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/next-devtools/userspace/app/segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '2494491361'
+}
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/next-devtools/userspace/app/segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '2494491361'
+}
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a/node_modules/next-intl/dist/esm/development/shared/NextIntlClientProvider.js#default" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '1356097482'
+}
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a/node_modules/next-intl/dist/esm/development/navigation/shared/BaseLink.js#default" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '829970378'
+}
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a/node_modules/next-intl/dist/esm/development/navigation/shared/BaseLink.js#default" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '829970378'
+}
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a/node_modules/next-intl/dist/esm/development/navigation/shared/BaseLink.js#default" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '829970378'
+}
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a/node_modules/next-intl/dist/esm/development/navigation/shared/BaseLink.js#default" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '829970378'
+}
+ ⨯ [TypeError: __webpack_modules__[moduleId] is not a function] {
+  digest: '42236463'
+}
+ ⨯ Error: Could not find the module "/Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/next-devtools/userspace/app/segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '2902331210'
+}
+[TypeError: __webpack_modules__[moduleId] is not a function]
+ ⨯ [TypeError: __webpack_modules__[moduleId] is not a function]
+ ⨯ [TypeError: __webpack_modules__[moduleId] is not a function] {
+  page: '/zh'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 941ms (1166 modules)
+ GET /zh 200 in 622ms
+ GET /zh 200 in 72ms
+ ⨯ Failed to generate static paths for /[locale]:
+[Error: Cannot find module './vendor-chunks/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a.js'
+Require stack:
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/webpack-runtime.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/app/[locale]/page.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/require.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/load-components.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/build/utils.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/dev/static-paths-worker.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/compiled/jest-worker/processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ ⨯ Failed to generate static paths for /[locale]:
+[Error: Cannot find module './vendor-chunks/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a.js'
+Require stack:
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/webpack-runtime.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/app/[locale]/page.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/require.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/load-components.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/build/utils.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/dev/static-paths-worker.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/compiled/jest-worker/processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ GET /zh 500 in 3618ms
+ ⨯ [Error: Cannot find module './vendor-chunks/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a.js'
+Require stack:
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/webpack-runtime.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/app/[locale]/page.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/require.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/load-components.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/build/utils.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/dev/static-paths-worker.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/compiled/jest-worker/processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/favicon.ico'
+}
+ GET /favicon.ico 500 in 240ms
+ ⨯ [Error: Cannot find module './vendor-chunks/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a.js'
+Require stack:
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/webpack-runtime.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/app/[locale]/page.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/require.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/load-components.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/build/utils.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/dev/static-paths-worker.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/compiled/jest-worker/processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/zh'
+}
+ GET /zh 500 in 465ms
+ ⨯ [Error: Cannot find module './vendor-chunks/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a.js'
+Require stack:
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/webpack-runtime.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/app/[locale]/page.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/require.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/load-components.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/build/utils.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/dev/static-paths-worker.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/compiled/jest-worker/processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/favicon.ico'
+}
+ GET /favicon.ico 500 in 211ms
+ ⨯ [Error: Cannot find module './vendor-chunks/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a.js'
+Require stack:
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/webpack-runtime.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/app/[locale]/page.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/require.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/load-components.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/build/utils.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/dev/static-paths-worker.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/compiled/jest-worker/processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/zh'
+}
+ GET /zh 500 in 454ms
+ ⨯ [Error: Cannot find module './vendor-chunks/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a.js'
+Require stack:
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/webpack-runtime.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/app/[locale]/page.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/require.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/load-components.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/build/utils.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/dev/static-paths-worker.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/compiled/jest-worker/processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/favicon.ico'
+}
+ GET /favicon.ico 500 in 209ms
+ ⨯ [Error: Cannot find module './vendor-chunks/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a.js'
+Require stack:
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/webpack-runtime.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/app/[locale]/page.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/require.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/load-components.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/build/utils.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/dev/static-paths-worker.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/compiled/jest-worker/processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/zh'
+}
+ GET /zh 500 in 437ms
+ ⨯ [Error: Cannot find module './vendor-chunks/next-intl@4.15.1_@types+react@19.3.0_next@15.5.29_@types+node@22.20.5_react-dom@19.3.1__423ddcbe7baea9b95fa18935bb24aa3a.js'
+Require stack:
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/webpack-runtime.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/.next/server/app/[locale]/page.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/require.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/load-components.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/build/utils.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/server/dev/static-paths-worker.js
+- /Users/deepmac/Documents/code/x-lead-miner-site/node_modules/.pnpm/next@15.5.29_@types+node@22.20.5_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/next/dist/compiled/jest-worker/processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/favicon.ico'
+}
+ GET /favicon.ico 500 in 215ms
