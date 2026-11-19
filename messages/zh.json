@@ -109,8 +109,7 @@
       "emptyBin": "暂无线索进入该档",
       "input": "搜索关键词",
       "hitSuffix": "条命中",
-      "binCountSuffix": "条",
-      "sampleNote": "示例数据——实时挖掘暂不可用"
+      "binCountSuffix": "条"
     }
   },
   "login": {

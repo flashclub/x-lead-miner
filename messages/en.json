@@ -109,8 +109,7 @@
       "emptyBin": "no leads in this tier yet",
       "input": "Search query",
       "hitSuffix": "hits",
-      "binCountSuffix": "posts",
-      "sampleNote": "sample data — live mining is unavailable right now"
+      "binCountSuffix": "posts"
     }
   },
   "login": {

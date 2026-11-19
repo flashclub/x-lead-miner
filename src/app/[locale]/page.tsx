@@ -138,7 +138,6 @@ export default async function LandingPage({
               statQualified: t('pipeline.statQualified'),
               scoringHint: t('pipeline.scoringHint'),
               emptyBin: t('pipeline.emptyBin'),
-              sampleNote: t('pipeline.sampleNote'),
               aria: t('pipeline.aria'),
             }}
           />

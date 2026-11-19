@@ -45,7 +45,6 @@ export interface PipelineLabels {
   statQualified: string;
   scoringHint: string;
   emptyBin: string;
-  sampleNote: string;
   aria: string;
 }
 

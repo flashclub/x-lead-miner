@@ -138,7 +138,8 @@ async function fetchScoredLeads(queries: string[]): Promise<ScoredLead[]> {
   }[] = [];
   for (const keyword of queries) {
     try {
-      const page = await client.search(keyword, { searchType: 'Latest' });
+      // exact-phrase search: unquoted multi-word queries return noise
+      const page = await client.search(`"${keyword}"`, { searchType: 'Latest' });
       const scored = await attachIntentScores(page.posts.slice(0, 14));
       for (const p of scored) {
         if (typeof p.intentScore !== 'number' || p.text.length < 12) continue;
