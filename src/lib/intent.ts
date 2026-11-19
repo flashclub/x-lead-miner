@@ -1,6 +1,5 @@
 import http from 'node:http';
 
-import { unstable_cache } from 'next/cache';
 
 import { getServerVar } from './server-env';
 import { XApiClient, type XPost } from './x-api';
