@@ -144,9 +144,9 @@ const HIT_RADIUS = 14;
 
 const laneOf = (score: number) => (score >= 80 ? 0 : score >= 60 ? 1 : 2);
 
-/** Overall dock ratio 2:3:5 (strong:mid:low) — directed animation ratio set
+/** Overall dock ratio 1:3:6 (strong:mid:low) — directed animation ratio set
  *  with the product owner; deliberately NOT the model's live distribution. */
-const TIER_RATIO = [0.2, 0.3, 0.5];
+const TIER_RATIO = [0.1, 0.3, 0.6];
 
 /** Real search operators used by the app — no quotes on purpose. */
 const QUERIES = [
@@ -282,8 +282,8 @@ export function LeadPipelineDiagram({
     let pooledTotal = 0; // cumulative intakes — drives the pool stat upward
     // Funnel stat: counts high/mid docks only (the qualified tiers) — the
     // watchlist tier is the noise the funnel filters out. Starts seeded at
-    // the 2:3:5 initial split, grows at half the pooled rate → pooled leads
-    // binned, always.
+    // the 1:3:6 initial split, grows at 40% of the pooled rate → pooled
+    // leads binned, always.
     const qualifiedSeed = Math.round(total * (TIER_RATIO[0] + TIER_RATIO[1]));
     let qualifiedTotal = 0; // docks into high/mid since load
     let rngState = 20261116;
@@ -291,12 +291,12 @@ export function LeadPipelineDiagram({
       rngState = (rngState * 1103515245 + 12345) % 2147483648;
       return rngState / 2147483648;
     };
-    // Deterministic 2:3:5 — a shuffled 10-dock window guarantees the exact
-    // ratio every window; weighted random drifted to 1:3:6 patterns.
+    // Deterministic 1:3:6 — a shuffled 10-dock window guarantees the exact
+    // ratio every window; per-dock weighted random drifted off-ratio.
     let ratioQueue: number[] = [];
     const nextRatioLane = () => {
       if (ratioQueue.length === 0) {
-        ratioQueue = [0, 0, 1, 1, 1, 2, 2, 2, 2, 2];
+        ratioQueue = [0, 1, 1, 1, 2, 2, 2, 2, 2, 2];
         for (let i = ratioQueue.length - 1; i > 0; i--) {
           const j = Math.floor(rand() * (i + 1));
           [ratioQueue[i], ratioQueue[j]] = [ratioQueue[j], ratioQueue[i]];
@@ -322,18 +322,17 @@ export function LeadPipelineDiagram({
     };
     const transits: { key: number; el: SVGGElement; born: number; from: Pt; lane: number; lineIdx: number; leadIdx: number; fresh: boolean }[] = [];
     const flies: { key: number; el: SVGGElement; born: number; lane: number; leadIdx: number; fresh: boolean; live: FlyLive }[] = [];
+    let lastLineIdx = -1; // no immediate repeat — keeps the flow organic
     let particleKey = 0;
     /** Transit particles are created freely — the effect never throttles,
      *  drops or queues a signal, whatever the data volume. */
     const spawnTransit = (from: Pt, lane: number, leadIdx: number, fresh: boolean) => {
-      // take the nearest inlet line so each signal flows onto the drawn
-      // line right beside it instead of crossing the others
-      let lineIdx = 0;
-      for (let i = 1; i < IN_LINES.length; i++) {
-        if (Math.abs(IN_LINES[i].p0.y - from.y) < Math.abs(IN_LINES[lineIdx].p0.y - from.y)) {
-          lineIdx = i;
-        }
-      }
+      // uniform random line, never the same twice in a row: every line keeps
+      // ~12.5% of the flow (no starvation) without a visible top-to-bottom
+      // round-robin march
+      let lineIdx = Math.floor(rand() * IN_LINES.length);
+      if (lineIdx === lastLineIdx) lineIdx = (lineIdx + 1) % IN_LINES.length;
+      lastLineIdx = lineIdx;
       const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       el.setAttribute('opacity', '0');
       const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -491,7 +490,7 @@ export function LeadPipelineDiagram({
       // ambient fallback from the cycling leads when the queue runs dry
       // (the signal stream between module and model never stalls)
       if (elapsed - lastConsume >= MODEL_RATE) {
-        // The model routes at the directed 2:3:5 ratio; the ambient feeder
+        // The model routes at the directed 1:3:6 ratio; the ambient feeder
         // picks a real lead matching the chosen lane so the fly's tooltip
         // agrees with the bin it docks into.
         let exitLane = nextRatioLane();

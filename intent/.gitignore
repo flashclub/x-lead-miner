@@ -4,3 +4,7 @@ data/
 model/
 __pycache__/
 .venv/
+model_bge/
+model_v2/
+model.v1-undertrained/
+*.log
