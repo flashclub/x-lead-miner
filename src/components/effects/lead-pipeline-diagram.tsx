@@ -234,9 +234,7 @@ export function LeadPipelineDiagram({
   const hitCountRef = useRef<SVGTSpanElement | null>(null);
   const hitTextRef = useRef<SVGTextElement | null>(null);
   /** cumulative pooled-lead stat, written imperatively from the rAF loop */
-  const pooledTextRef = useRef<HTMLSpanElement | null>(null);
   /** cumulative FRESH-signal docks (recycled re-surfacing doesn't double-count) */
-  const qualifiedTextRef = useRef<HTMLSpanElement | null>(null);
   /** last-frame positions for hit-testing (svg units) */
   const hitPos = useRef<{ pool: Pt[]; fly: Pt[] }>({ pool: [], fly: [] });
   /** live fly particles bridged for event handlers (hit-test + tooltip) */
@@ -978,16 +976,17 @@ export function LeadPipelineDiagram({
       </div>
 
       {/* honest stats: real fetched leads + live dock count from bins */}
+      {/* stats: derived from bins state — always consistent with the bins */}
       <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-base text-text-muted">
         <span>
-          <span ref={pooledTextRef} className="font-semibold text-text">
-            {total}
+          <span className="font-semibold text-text">
+            {bins.counts[0] + bins.counts[1] + bins.counts[2]}
           </span>{' '}
           {labels.statScored}
         </span>
         <span>
-          <span ref={qualifiedTextRef} className="font-semibold text-text">
-            {Math.round(total * (TIER_RATIO[0] + TIER_RATIO[1]))}
+          <span className="font-semibold text-text">
+            {bins.counts[0] + bins.counts[1]}
           </span>{' '}
           {labels.statQualified}
         </span>
