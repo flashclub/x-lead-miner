@@ -969,7 +969,7 @@ export function LeadPipelineDiagram({
         </span>
         <span>
           <span className="font-semibold text-text">
-            {bins.counts[0] + bins.counts[1]}
+            {bins.counts[0] + bins.counts[1] + bins.counts[2]}
           </span>{' '}
           {labels.statQualified}
         </span>

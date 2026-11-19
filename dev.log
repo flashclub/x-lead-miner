@@ -512,3 +512,31 @@ Using vars defined in .dev.vars
  GET /icon.svg?ee6b6aec6ad60040 200 in 7ms
  ✓ Compiled in 331ms (840 modules)
  GET /zh 200 in 198ms
+ GET /zh 200 in 253ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 19ms
+ GET /zh 200 in 104ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 5ms
+ GET /zh 200 in 104ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 21ms
+ GET / 200 in 45ms
+ GET /zh 200 in 44ms
+ GET /zh 200 in 104ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 7ms
+ GET /zh 200 in 108ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 5ms
+ GET /zh 200 in 115ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 4ms
+ GET /zh 200 in 99ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 7ms
+ GET /zh 200 in 106ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 7ms
+ GET /zh 200 in 103ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 5ms
+ GET /zh 200 in 112ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 7ms
+ GET /zh 200 in 107ms
+ GET /icon.svg?ee6b6aec6ad60040 200 in 27ms
+ ✓ Compiled in 379ms (823 modules)
+ GET /zh 200 in 202ms
+ ✓ Compiled in 256ms (823 modules)
+ GET /zh 200 in 150ms
