@@ -181,10 +181,15 @@ function initBins(leads: ScoredLead[]): BinState {
   // Open mid-stream: the miner has "already been running", so the tier
   // boxes start seeded with the real score distribution of the fetched
   // leads (and the stats agree with the boxes from frame one).
-  const counts: [number, number, number] = [0, 0, 0];
+  // seed at the directed 1:3:6 ratio the owner preset — the opening frame
+  // already reads as the intended funnel, then grows along the same ratio
+  const counts: [number, number, number] = [
+    Math.max(1, Math.round(leads.length * TIER_RATIO[0])),
+    Math.max(1, Math.round(leads.length * TIER_RATIO[1])),
+    Math.max(1, leads.length - Math.round(leads.length * TIER_RATIO[0]) - Math.round(leads.length * TIER_RATIO[1])),
+  ];
   const latest: (ScoredLead | null)[] = [null, null, null];
   for (const l of leads) {
-    counts[laneOf(l.score)] += 1;
     const lane = laneOf(l.score);
     if (!latest[lane]) latest[lane] = l;
   }
@@ -285,6 +290,14 @@ export function LeadPipelineDiagram({
     // the 1:3:6 initial split, grows at 40% of the pooled rate → pooled
     // leads binned, always.
     let rngState = 20261116;
+    let leadOrder: number[] = []; // shuffled per lap so repeats don't read as "same data"
+    const refillOrder = () => {
+      leadOrder = Array.from({ length: leads.length }, (_, i) => i);
+      for (let i = leadOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [leadOrder[i], leadOrder[j]] = [leadOrder[j], leadOrder[i]];
+      }
+    };
     const rand = () => {
       rngState = (rngState * 1103515245 + 12345) % 2147483648;
       return rngState / 2147483648;
@@ -441,10 +454,11 @@ export function LeadPipelineDiagram({
         intakes.push({
           slot,
           born: elapsed,
-          leadIdx: intakeCursor % leads.length,
+          leadIdx: leadOrder[intakeCursor % leadOrder.length],
           intakeSlot,
         });
         intakeCursor += 1;
+        if (leadOrder.length === 0 || intakeCursor % leadOrder.length === 0) refillOrder(); // lazy init + fresh shuffle every lap
       }
       for (let k = intakes.length - 1; k >= 0; k--) {
         const it = intakes[k];
@@ -483,7 +497,7 @@ export function LeadPipelineDiagram({
           // Lifetime over — the signal FLOWS away along an inlet line into
           // the model (it must never fade in place). Particles are spawned
           // freely; nothing throttles or drops it.
-          spawnTransit(hitPos.current.pool[s], laneOf(lead.score), leads.indexOf(lead), false, slotBurst[s]);
+          spawnTransit(hitPos.current.pool[s], nextRatioLane(), leads.indexOf(lead), false, slotBurst[s]);
           poolSlotLead.current[s] = null;
           slotBornAt[s] = undefined;
           freeSlots.push(s);
@@ -544,8 +558,10 @@ export function LeadPipelineDiagram({
           lastDockAt[lane] = elapsed;
           C.binned += fly.amount;
           C.lanes[lane] += fly.amount;
-          // the fly also swaps the tier's example card
+          // swap the tier's example card ONLY when the lead genuinely
+          // belongs to that tier — card thresholds always match the box
           setBins((prev) => {
+            if (laneOf(lead.score) !== lane) return prev;
             const latest = [...prev.latest];
             latest[lane] = lead;
             const seq: [number, number, number] = [...prev.seq];
