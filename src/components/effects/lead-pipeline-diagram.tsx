@@ -139,8 +139,8 @@ const POOL_SLOTS = 60; // visual buffer dots; recycled oldest-first when full
 const POOL_PREFILL = 8; // dots shown before the first retrieval lands
 const DOT_LIFETIME = 1.4; // s a pool dot stays before it flows away into the model
 
-/* ── COUNTER SPEED — numbers ride the particles: each dot carries a burst
-   of posts (see rollBurst); at ~25 dots/s the stats race at ~250/s ── */
+/* ── COUNTER SPEED — one dot = one post = +1; at ~25 dots/s the stats
+   tick ~25 times per second, every tick visibly carried by a particle ── */
 const HIT_RADIUS = 14;
 
 const laneOf = (score: number) => (score >= 80 ? 0 : score >= 60 ? 1 : 2);
@@ -239,7 +239,7 @@ export function LeadPipelineDiagram({
   const poolCountRef = useRef<HTMLSpanElement | null>(null);
   const binnedRef = useRef<HTMLSpanElement | null>(null);
   const binCountRefs = useRef<(SVGTSpanElement | null)[]>([null, null, null]);
-  /** live counters — advanced in bursts carried by the visible particles */
+  /** live counters — +1 per visible particle, so every tick is grounded */
   const counters = useRef<{ pooled: number; binned: number; lanes: [number, number, number] } | null>(null);
   const inputTextRef = useRef<SVGTSpanElement | null>(null);
   const hitCountRef = useRef<SVGTSpanElement | null>(null);
@@ -372,12 +372,9 @@ export function LeadPipelineDiagram({
     }
     const C = counters.current;
     hitPos.current.pool = Array.from({ length: POOL_SLOTS }, () => ({ x: -999, y: -999 }));
-    /** posts represented by one visible dot — irregular so the stats
-     *  breathe instead of ticking like a stopwatch */
-    const rollBurst = (): number => {
-      const base = 5 + Math.floor(rand() * 8); // 5–12
-      return rand() < 0.15 ? base * 2 : base; // occasional big cluster
-    };
+    /** one visible dot = one real post = one +1 on the counters.
+     *  Every number change has a particle you can point at. */
+    const rollBurst = (): number => 1;
     const slotBurst: number[] = Array(POOL_SLOTS).fill(0);
     for (let i = 0; i < Math.min(POOL_PREFILL, leads.length); i++) {
       const slot = takeSlot();
@@ -412,8 +409,7 @@ export function LeadPipelineDiagram({
       // intake keeps streaming into the pool in the background
       const ct = elapsed - cycleStart;
 
-      // 0) write the burst-carried counters to the DOM (bursts land where
-      // the particles are — the numbers move WITH the picture, not on a timer)
+      // 0) write the counters to the DOM — they move WITH the particles
       if (poolCountRef.current) poolCountRef.current.textContent = String(C.pooled);
       if (binnedRef.current) binnedRef.current.textContent = String(C.binned);
       for (let i = 0; i < 3; i++) {
