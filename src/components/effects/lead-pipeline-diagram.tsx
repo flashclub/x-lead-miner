@@ -290,6 +290,19 @@ export function LeadPipelineDiagram({
     // the 1:3:6 initial split, grows at 40% of the pooled rate → pooled
     // leads binned, always.
     let rngState = 20261116;
+    // per-tier member rotation — the example card always shows a lead that
+    // genuinely belongs to the bin it sits in, rotating through the members
+    const tierMembers: ScoredLead[][] = [0, 1, 2].map((lane) =>
+      leads.filter((x) => laneOf(x.score) === lane)
+    );
+    const tierCursor = [0, 0, 0];
+    const nextCardForLane = (lane: number): ScoredLead | null => {
+      const m = tierMembers[lane];
+      if (m.length === 0) return null;
+      const pick = m[tierCursor[lane] % m.length];
+      tierCursor[lane] += 1;
+      return pick;
+    };
     let leadOrder: number[] = []; // shuffled per lap so repeats don't read as "same data"
     const refillOrder = () => {
       leadOrder = Array.from({ length: leads.length }, (_, i) => i);
@@ -554,12 +567,14 @@ export function LeadPipelineDiagram({
           lastDockAt[lane] = elapsed;
           C.binned += fly.amount;
           C.lanes[lane] += fly.amount;
-          // swap the tier's example card ONLY when the lead genuinely
-          // belongs to that tier — card thresholds always match the box
+          // every dock swaps the card with a genuine member of this tier —
+          // so the scale animation fires on every single dock. The cursor
+          // advances HERE (outside the updater) — StrictMode double-invokes
+          // updaters and would skip members otherwise.
+          const card = nextCardForLane(lane);
           setBins((prev) => {
-            if (laneOf(lead.score) !== lane) return prev;
             const latest = [...prev.latest];
-            latest[lane] = lead;
+            if (card) latest[lane] = card;
             const seq: [number, number, number] = [...prev.seq];
             seq[lane] = prev.seq[lane] + 1;
             return { ...prev, latest, seq };
