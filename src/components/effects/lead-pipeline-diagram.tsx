@@ -483,7 +483,7 @@ export function LeadPipelineDiagram({
           // Lifetime over — the signal FLOWS away along an inlet line into
           // the model (it must never fade in place). Particles are spawned
           // freely; nothing throttles or drops it.
-          spawnTransit(hitPos.current.pool[s], nextRatioLane(), leads.indexOf(lead), false, slotBurst[s]);
+          spawnTransit(hitPos.current.pool[s], laneOf(lead.score), leads.indexOf(lead), false, slotBurst[s]);
           poolSlotLead.current[s] = null;
           slotBornAt[s] = undefined;
           freeSlots.push(s);
