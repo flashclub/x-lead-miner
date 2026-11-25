@@ -33,3 +33,8 @@ next-env.d.ts
 # local-only artifacts — never publish
 dev.log
 docs/rag-langchain-scenarios.md
+
+# local tooling artifacts (video2code / video-agent-kit / zcode)
+.v2c/
+.video_agent/
+.zcode/
