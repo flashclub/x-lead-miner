@@ -16,9 +16,9 @@ const serverEnvSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
-  // Scraper.tech X API key — optional so auth/stripe-only flows work without
-  // it; the XApiClient checks presence at call time.
-  SCRAPER_API_KEY: z.string().optional(),
+  // AI API Key X data key (aiapikey.ai) — optional so auth/stripe-only flows
+  // work without it; the XApiClient checks presence at call time.
+  AIAPIKEY_KEY: z.string().optional(),
   // MuleRun LLM gateway (chat assistant + intent-model labeling teacher).
   MULERUN_API_KEY: z.string().optional(),
   MULERUN_LLM_MODEL: z.string().optional(),

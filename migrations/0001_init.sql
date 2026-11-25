@@ -1,7 +1,5 @@
--- Per-project user table. Replaced by the scaffolder with "<slug>_user".
--- All MonoBoard SaaS projects share one D1 database named "saas". This is the
--- baseline table; a project may add one project-prefixed business table without
--- additional approval. Creating a third or later table requires user approval.
+-- Application user table ("x_lead_miner_user", see prisma/schema.prisma @@map).
+-- One baseline table; business tables are project-prefixed and added as needed.
 CREATE TABLE "x_lead_miner_user" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "email" TEXT NOT NULL,

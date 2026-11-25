@@ -43,7 +43,7 @@ precision@k gaps below ~0.05 as ties.
 
 | Step | Command | Needs | Output |
 | --- | --- | --- | --- |
-| 1. collect | `python3 collect.py` | `SCRAPER_API_KEY`, stdlib only | `data/posts.jsonl` |
+| 1. collect | `python3 collect.py` | `AIAPIKEY_KEY`, stdlib only | `data/posts.jsonl` |
 | 2. label | `python3 label.py --limit 50` | `MULERUN_API_KEY` (LLM teacher) | `data/labeled.jsonl` |
 | 3. train | `python3 train.py` | `pip install -r requirements.txt` | `model/head.pt` + `model/metrics.json` |
 | 4. serve | `python3 serve.py` | same env as train | HTTP on `127.0.0.1:5019` |

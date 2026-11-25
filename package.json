@@ -41,11 +41,5 @@
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "wrangler": "^3.90.0"
-  },
-  "monoboard": {
-    "category": "saas",
-    "stage": "building",
-    "theme": "ember",
-    "description": "X 线索挖掘工具：监听 X 上的购买意向帖（求推荐/比价/吐槽竞品），打分汇成线索队列（开发中）"
   }
 }

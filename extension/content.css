@@ -1,0 +1,71 @@
+/*
+ * Intent badge styling. Mirrors the product's own conventions
+ * (src/components/lead-search.tsx): mono numerals, pill shape, accent only for
+ * high intent, and the 80/60 tier boundaries from src/lib/intent.ts.
+ *
+ * X ships both light and dark themes and flips them independently of the OS,
+ * so the badge keeps a translucent background and never relies on a specific
+ * page background to stay legible.
+ */
+
+.xlm-badge {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-inline-start: 6px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: default;
+  user-select: none;
+}
+
+.xlm-badge[data-tier="high"] {
+  color: #00ba7c;
+  background: rgba(0, 186, 124, 0.14);
+  border-color: rgba(0, 186, 124, 0.38);
+}
+
+.xlm-badge[data-tier="mid"] {
+  color: #a67c00;
+  background: rgba(255, 212, 0, 0.16);
+  border-color: rgba(255, 212, 0, 0.42);
+}
+
+.xlm-badge[data-tier="low"] {
+  color: #71767b;
+  background: rgba(113, 118, 123, 0.14);
+  border-color: rgba(113, 118, 123, 0.32);
+}
+
+/* Dark X themes need the amber lifted for contrast. */
+@media (prefers-color-scheme: dark) {
+  .xlm-badge[data-tier="mid"] {
+    color: #ffd400;
+  }
+
+  .xlm-badge[data-tier="low"] {
+    color: #8b98a5;
+  }
+}
+
+/* Fallback placement when X drops the timestamp anchor we normally sit next
+   to: tuck the badge under the ⋯ menu. `position: relative` is scoped with
+   :has() so untouched tweets keep their original layout. */
+article[data-testid="tweet"]:has(> .xlm-badge--overlay) {
+  position: relative;
+}
+
+.xlm-badge--overlay {
+  position: absolute;
+  top: 6px;
+  right: 44px;
+  z-index: 1;
+}

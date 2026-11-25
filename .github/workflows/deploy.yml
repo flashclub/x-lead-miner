@@ -7,7 +7,7 @@ on:
 
 jobs:
   # Push-CI: verify the app builds. Needs no secrets (landing falls back
-  # to sample leads when SCRAPER_API_KEY is absent — by design).
+  # to sample leads when AIAPIKEY_KEY is absent — by design).
   build:
     runs-on: ubuntu-latest
     steps:
@@ -29,7 +29,7 @@ jobs:
 
   # Deploy is MANUAL (workflow_dispatch) and requires these repo secrets:
   #   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID,
-  #   SCRAPER_API_KEY, AUTH_SECRET,
+  #   AIAPIKEY_KEY, AUTH_SECRET,
   #   GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
   # Optional (Lead Analyst, see docs/lead-analyst.md): MODAL_KEY, MODAL_SECRET, ANALYST_URL
   deploy:
@@ -51,7 +51,7 @@ jobs:
       - run: pnpm exec prisma generate
       - name: Build + package (OpenNext → Cloudflare)
         env:
-          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
+          AIAPIKEY_KEY: ${{ secrets.AIAPIKEY_KEY }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           MULERUN_API_KEY: ${{ secrets.MULERUN_API_KEY }}
           NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: price_demo_placeholder
@@ -60,18 +60,18 @@ jobs:
         run: pnpm exec opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion
       - name: Install wrangler v4 (new asset upload API)
         run: npm install -g wrangler@4
-      - name: Worker runtime secrets (SCRAPER / MULERUN / AUTH / Lead Analyst)
+      - name: Worker runtime secrets (XDATA / MULERUN / AUTH / Lead Analyst)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
+          AIAPIKEY_KEY: ${{ secrets.AIAPIKEY_KEY }}
           MULERUN_API_KEY: ${{ secrets.MULERUN_API_KEY }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           MODAL_KEY: ${{ secrets.MODAL_KEY }}
           MODAL_SECRET: ${{ secrets.MODAL_SECRET }}
           ANALYST_URL: ${{ secrets.ANALYST_URL }}
         run: |
-          echo "$SCRAPER_API_KEY" | pnpm exec wrangler secret put SCRAPER_API_KEY
+          echo "$AIAPIKEY_KEY" | pnpm exec wrangler secret put AIAPIKEY_KEY
           echo "$MULERUN_API_KEY" | pnpm exec wrangler secret put MULERUN_API_KEY
           echo "$AUTH_SECRET" | pnpm exec wrangler secret put AUTH_SECRET
           # Lead Analyst (the second model, on Modal) is optional: when its three

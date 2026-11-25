@@ -1,7 +1,7 @@
 /*
- * Theme: aurora (default) — deep indigo night with violet/fuchsia glow.
- * One of the MonoBoard theme presets; switch by editing the import in
- * src/app/globals.css or re-scaffolding with `--theme aurora`.
+ * Theme: aurora — deep indigo night with violet/fuchsia glow.
+ * Alternative preset, currently unused; switch by editing the import in
+ * src/app/globals.css.
  */
 
 :root {

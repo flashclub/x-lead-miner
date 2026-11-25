@@ -11,7 +11,7 @@ const searchParamsSchema = z.object({
 
 /**
  * GET /api/leads/search?query=...&searchType=Latest|Top&cursor=...
- * Server-side proxy so SCRAPER_API_KEY never reaches the browser.
+ * Server-side proxy so AIAPIKEY_KEY never reaches the browser.
  * Returns the normalized SearchPage from lib/x-api.ts.
  */
 // Public demo: simple in-memory per-IP limiter protects the paid X data
@@ -51,10 +51,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: issue?.message ?? 'Invalid request' }, { status: 400 });
   }
 
-  const apiKey = await getServerVar('SCRAPER_API_KEY');
+  const apiKey = await getServerVar('AIAPIKEY_KEY');
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'SCRAPER_API_KEY is not configured on the server' },
+      { error: 'AIAPIKEY_KEY is not configured on the server' },
       { status: 500 }
     );
   }

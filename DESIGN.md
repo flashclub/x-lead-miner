@@ -1,12 +1,10 @@
 # Design System v2
 
-This app was generated from the MonoBoard SaaS template with a theme preset.
 The system is token-driven: pages reference semantic tokens, themes define
 their values. Never hardcode hex colors in components — change the theme or
 add a token instead.
 
-Decision basis: community design research with weighted evidence
-(`docs/ui/community-design-research.md` in the monoboard repo). Highlights:
+Decision basis: community design research with weighted evidence. Highlights:
 distinctiveness is the highest-rated quality; unearned decoration (excess
 animation, glassmorphism everywhere, custom cursors, scroll-jacking) is the
 most-criticized failure mode.
@@ -24,11 +22,8 @@ This app ships **two palettes of the ember brand**, user-switchable:
 `<html>` and persists the choice in `localStorage` (`xlm-theme`); an inline
 script in `layout.tsx` restores a saved 'dark' before first paint, so there
 is no flash. Toggle glyphs swap via CSS — the component holds no React
-state. The other scaffold presets (aurora/terminal/tide/minimal) remain
-unused in `src/app/themes/` as alternative bases.
-
-At generation time the theme was chosen with `pnpm new-saas x-lead-miner
---theme ember` and recorded in `package.json` → `monoboard.theme`.
+state. The other theme presets (aurora/terminal/tide/minimal) remain unused
+in `src/app/themes/` as alternative bases.
 
 ## Tokens
 
@@ -54,7 +49,7 @@ Montserrat.
 
 Community data is unambiguous: more than 2–3 animations per page reads as
 unusable, and scroll-triggered reveals read as "the site is slow". This
-template therefore ships exactly:
+design system therefore ships exactly:
 
 1. **Hero background drift** — one slow CSS transform on `.hero-glow`
    (disabled in the `terminal` and `minimal` themes).

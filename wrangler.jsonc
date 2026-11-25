@@ -1,16 +1,9 @@
 {
   // Next.js on Cloudflare Workers via @opennextjs/cloudflare
   //
-  // Database: all MonoBoard SaaS projects share ONE D1 database named "saas".
-  // Each project starts with a baseline `<slug>_user` table and may use up to
-  // two project-prefixed tables without additional approval, so every generated
-  // app points at the same database_name and database_id.
-  //
-  // First-time setup (once for the whole monorepo):
-  //   wrangler d1 create saas
-  // Then paste the returned database_id below. New projects created afterwards
-  // only need `pnpm db:migrate:local` (or :remote) to add their `<slug>_user`
-  // table to this shared database — no new `d1 create` per project.
+  // Database: D1 (SQLite at the edge).
+  // First-time setup: `wrangler d1 create saas`, paste the returned
+  // database_id below, then `pnpm db:migrate:local` (or `:remote`).
   "name": "x-lead-miner",
   // 自定义域名：wrangler 部署时自动注册路由并创建 DNS 记录
   "routes": [

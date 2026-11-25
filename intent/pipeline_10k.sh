@@ -1,11 +1,11 @@
 #!/bin/bash
 # 10k pipeline: wait for collection -> parallel labeling -> training
-cd /Users/deepmac/Documents/code/monoboard/apps/x-lead-miner/intent
+cd "$(dirname "$0")"
 echo "[pipeline] waiting for collector (pid 25156)..."
 while kill -0 25156 2>/dev/null; do sleep 30; done
 echo "[pipeline] collection done at $(date)"
 
-export SCRAPER_API_KEY=$(grep '^SCRAPER_API_KEY=' ../.env | cut -d= -f2)
+export AIAPIKEY_KEY=$(grep '^AIAPIKEY_KEY=' ../.env | cut -d= -f2)
 export MULERUN_API_KEY=$(grep '^MULERUN_API_KEY=' ../.env | cut -d= -f2)
 
 echo "[pipeline] labeling with 4 workers..."

@@ -1,4 +1,4 @@
-"""Step 1 — collect candidate posts from the Scraper.tech X API.
+"""Step 1 — collect candidate posts from the AI API Key X API.
 
 Pulls one page per query from two buckets:
   intent  — phrasings buyers actually type ("anyone recommend", ...)
@@ -6,8 +6,12 @@ Pulls one page per query from two buckets:
 
 Dedupes by tweet id and writes data/posts.jsonl. Runs on the stdlib alone.
 
+Billing note: X results cost 12 credits each ($1 = 100k credits), so one
+run of this script (~7 queries x 20 posts) is roughly 1.7k credits of the
+free tier's 60k/month.
+
 Usage:
-    SCRAPER_API_KEY=... python3 collect.py [--per-query 20]
+    AIAPIKEY_KEY=... python3 collect.py [--per-query 20]
 """
 
 import argparse
@@ -19,7 +23,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-API = "https://api.scraper.tech/search.php"
+API = "https://aiapikey.ai/v1/x/search"
 
 INTENT_QUERIES = [
     '"anyone recommend" lang:en -filter:replies',
@@ -37,15 +41,19 @@ NOISE_QUERIES = [
 
 def fetch_page(query: str, api_key: str) -> list[dict]:
     url = API + "?" + urllib.parse.urlencode(
-        {"query": query, "search_type": "Latest", "cursor": ""}
+        {"query": query, "searchType": "Latest", "cursor": ""}
     )
-    request = urllib.request.Request(url, headers={"Scraper-Key": api_key})
-    with urllib.request.urlopen(request, timeout=30) as response:
+    request = urllib.request.Request(
+        url, headers={"Authorization": f"Bearer {api_key}"}
+    )
+    with urllib.request.urlopen(request, timeout=60) as response:
         payload = json.load(response)
     if "error" in payload:
-        # Upstream returns HTTP 200 for business errors (verified 2026-11-16).
-        raise RuntimeError(f"upstream error: {payload['error']}")
-    return payload.get("timeline", []) or []
+        # Defensive: the API uses real HTTP status codes, but never trust a
+        # 200 that carries an in-body error object.
+        error = payload["error"]
+        raise RuntimeError(f"upstream error: {error}")
+    return payload.get("tweets", []) or []
 
 
 def main() -> None:
@@ -54,9 +62,9 @@ def main() -> None:
     parser.add_argument("--out", default=str(Path(__file__).parent / "data" / "posts.jsonl"))
     args = parser.parse_args()
 
-    api_key = os.environ.get("SCRAPER_API_KEY")
+    api_key = os.environ.get("AIAPIKEY_KEY")
     if not api_key:
-        sys.exit("SCRAPER_API_KEY is not set — put it in the environment or .dev.vars")
+        sys.exit("AIAPIKEY_KEY is not set — put it in the environment or .dev.vars")
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -71,24 +79,24 @@ def main() -> None:
                 continue
             added = 0
             for tweet in tweets:
-                tweet_id = tweet.get("tweet_id")
+                tweet_id = tweet.get("id")
                 text = (tweet.get("text") or "").strip()
-                user = tweet.get("user_info") or {}
+                author = tweet.get("author") or {}
                 if not tweet_id or len(text) < 20 or tweet_id in rows:
                     continue
                 rows[tweet_id] = {
                     "id": tweet_id,
                     "text": text,
-                    "handle": user.get("screen_name") or tweet.get("screen_name") or "",
-                    "followers": user.get("followers_count"),
-                    "created_at": tweet.get("created_at"),
+                    "handle": author.get("screenName") or "",
+                    "followers": author.get("followers"),
+                    "created_at": tweet.get("createdAt"),
                     "bucket": bucket,
                     "source_query": query,
                     "label": None,
                 }
                 added += 1
             print(f"ok    {bucket}: +{added}  ({query})")
-            time.sleep(2.0)  # polite: search is rate-limited to 120 req/min
+            time.sleep(2.0)  # polite pacing; billing is per result, not per request
 
     with out_path.open("w", encoding="utf-8") as handle:
         for row in rows.values():

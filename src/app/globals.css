@@ -6,9 +6,7 @@
 @import "./themes/ember.css";
 
 /*
- * MonoBoard SaaS template — design system v2.
- * Semantic tokens are defined per theme in src/app/themes/*.css
- * (chosen at scaffold time via `pnpm new-saas <name> --theme <name>`).
+ * Design system v2 — semantic tokens defined per theme in src/app/themes/*.css.
  * See DESIGN.md for the token table, theme list and animation budget.
  */
 

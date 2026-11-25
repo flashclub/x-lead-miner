@@ -1,14 +1,15 @@
 """Bulk collector — scales collection to ~10k posts with deep pagination.
 
 Differences from collect.py (single-page-per-query):
-  * paginates via `next_cursor` until the per-query target is met,
+  * paginates via `nextCursor` until the per-query target is met,
     results are exhausted, or a max-pages guard trips
   * appends incrementally to a resume-safe JSONL (re-running skips
     already-collected tweet ids)
-  * paces ~2.5s/page — well under the documented 120 req/min limit
+  * paces ~2.5s/page — polite, and billing is per result (12 credits/tweet),
+    so plan against the free tier's 60k credits/month (~5k posts)
 
 Usage:
-    SCRAPER_API_KEY=... python3 collect_bulk.py [--out data/posts_10k.jsonl] [--max-pages 30]
+    AIAPIKEY_KEY=... python3 collect_bulk.py [--out data/posts_10k.jsonl] [--max-pages 30]
 """
 
 import argparse
@@ -20,8 +21,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-API = "https://api.scraper.tech/search.php"
-PAGE_SLEEP = 2.5  # s between pages — 24 req/min vs 120 req/min limit
+API = "https://aiapikey.ai/v1/x/search"
+PAGE_SLEEP = 2.5  # s between pages — polite pacing, no documented req/min cap
 QUERY_SLEEP = 1.0
 MAX_EMPTY_NEW = 3  # stop a query after this many consecutive pages with <5 new ids
 
@@ -60,15 +61,19 @@ QUERIES_PLAN = [
 
 def fetch_page(query: str, cursor: str, api_key: str) -> tuple[list[dict], str]:
     url = API + "?" + urllib.parse.urlencode(
-        {"query": query, "search_type": "Latest", "cursor": cursor}
+        {"query": query, "searchType": "Latest", "cursor": cursor}
     )
-    request = urllib.request.Request(url, headers={"Scraper-Key": api_key})
-    with urllib.request.urlopen(request, timeout=30) as response:
+    request = urllib.request.Request(
+        url, headers={"Authorization": f"Bearer {api_key}"}
+    )
+    with urllib.request.urlopen(request, timeout=60) as response:
         payload = json.load(response)
     if "error" in payload:
-        # Upstream returns HTTP 200 for business errors (verified 2026-11-16).
-        raise RuntimeError(f"upstream error: {payload['error']}")
-    return payload.get("timeline", []) or [], payload.get("next_cursor") or ""
+        # Defensive: the API uses real HTTP status codes, but never trust a
+        # 200 that carries an in-body error object.
+        error = payload["error"]
+        raise RuntimeError(f"upstream error: {error}")
+    return payload.get("tweets", []) or [], payload.get("nextCursor") or ""
 
 
 def load_seen(path: Path) -> set[str]:
@@ -91,9 +96,9 @@ def main() -> None:
     parser.add_argument("--max-pages", type=int, default=40, help="per-query pagination guard")
     args = parser.parse_args()
 
-    api_key = os.environ.get("SCRAPER_API_KEY")
+    api_key = os.environ.get("AIAPIKEY_KEY")
     if not api_key:
-        sys.exit("SCRAPER_API_KEY is not set")
+        sys.exit("AIAPIKEY_KEY is not set")
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -127,18 +132,18 @@ def main() -> None:
                 continue
             added = 0
             for tweet in tweets:
-                tweet_id = tweet.get("tweet_id")
+                tweet_id = tweet.get("id")
                 text = (tweet.get("text") or "").strip()
-                user = tweet.get("user_info") or {}
+                author = tweet.get("author") or {}
                 if not tweet_id or len(text) < 20 or tweet_id in seen:
                     continue
                 seen.add(tweet_id)
                 handle.write(json.dumps({
                     "id": tweet_id,
                     "text": text,
-                    "handle": user.get("screen_name") or tweet.get("screen_name") or "",
-                    "followers": user.get("followers_count"),
-                    "created_at": tweet.get("created_at"),
+                    "handle": author.get("screenName") or "",
+                    "followers": author.get("followers"),
+                    "created_at": tweet.get("createdAt"),
                     "bucket": bucket,
                     "source_query": query,
                     "label": None,

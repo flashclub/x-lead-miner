@@ -29,3 +29,7 @@ next-env.d.ts
 
 # wrangler
 .wrangler/
+
+# local-only artifacts — never publish
+dev.log
+docs/rag-langchain-scenarios.md

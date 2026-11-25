@@ -1,6 +1,6 @@
 #!/bin/bash
-cd /Users/deepmac/Documents/code/monoboard/apps/x-lead-miner/intent
-export SCRAPER_API_KEY=$(grep '^SCRAPER_API_KEY=' ../.env | cut -d= -f2)
+cd "$(dirname "$0")"
+export AIAPIKEY_KEY=$(grep '^AIAPIKEY_KEY=' ../.env | cut -d= -f2)
 export MULERUN_API_KEY=$(grep '^MULERUN_API_KEY=' ../.env | cut -d= -f2)
 POSTS=$(wc -l < data/posts_10k.jsonl | tr -d ' ')
 echo "[rerun] target: label all $POSTS posts (2 workers, no-drop retry)"

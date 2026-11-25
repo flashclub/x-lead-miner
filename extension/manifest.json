@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "X Lead Miner — intent scores on x.com",
+  "version": "0.1.0",
+  "description": "Scores every tweet you see on x.com for buying intent and shows the score next to its timestamp.",
+  "permissions": ["storage"],
+  "host_permissions": ["https://x-lead-miner.ideaguard.dev/*"],
+  "optional_host_permissions": ["*://*/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "X Lead Miner"
+  }
+}

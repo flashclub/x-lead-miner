@@ -16,9 +16,9 @@ NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=
 # session. Hard-disabled when NODE_ENV=production, so it never leaks.
 # DEV_BYPASS_AUTH=true
 
-# Scraper.tech X API (https://api.scraper.tech) — server-only, sent as the
-# `Scraper-Key` header. Verified contract: docs/x-api.md
-SCRAPER_API_KEY=
+# AI API Key X data (https://aiapikey.ai) — server-only, sent as an
+# `Authorization: Bearer` header. Verified contract: docs/x-api.md
+AIAPIKEY_KEY=
 
 # MuleRun LLM gateway (https://api.mulerun.com) — powers /api/chat and the
 # intent-model labeling teacher (intent/label.py). OpenAI-compatible.

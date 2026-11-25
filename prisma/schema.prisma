@@ -16,11 +16,9 @@ datasource db {
 /// were previously a separate StripeCustomer table. They are NULL until the
 /// user completes their first checkout, at which point the webhook fills them in.
 ///
-/// Physical table name is per-project (`<slug>_user`) via @@map below; the
-/// placeholder is replaced by the MonoBoard scaffolder so every SaaS project
-/// in the shared `saas` D1 database owns an isolated baseline user table. A
-/// project may add one project-prefixed business table without further approval;
-/// creating a third or later table requires explicit user approval.
+/// Physical table name is `x_lead_miner_user` via @@map below, keeping the
+/// baseline user table isolated from other apps that share the same D1
+/// database. Business tables follow the same `<app>_<table>` prefix.
 model User {
   id                String    @id @default(cuid())
   email             String    @unique

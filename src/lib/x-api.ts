@@ -1,23 +1,27 @@
 import { z } from 'zod';
 
 /**
- * Typed client for the Scraper.tech X API (https://api.scraper.tech).
+ * Typed client for the AI API Key X API (https://aiapikey.ai).
  *
- * Contract verified against the live API on 2026-11-16 — see docs/x-api.md
+ * Contract verified against the live API on 2026-11-25 — see docs/x-api.md
  * for the full field lists and quirks. Known traps baked into this client:
- *   - Auth is the `Scraper-Key` header (not Bearer, not query param).
- *   - Upstream returns HTTP 200 for business errors; the error lives in the
- *     JSON body (`{"error": "..."}`). Rate limiting can also surface as a
- *     body-level error, not only as HTTP 429.
- *   - search and tweet return DIFFERENT tweet shapes:
- *     search → tweet_id / user_info / favorites, tweet → id / author / likes.
- *   - Follower count is `followers_count` inside search's user_info, but
- *     `sub_count` in tweet's author and screenname's profile.
- * Do not add schema fields without re-verifying against the live API or the
- * Playground (https://scraper.tech/panel/playground/twitter/).
+ *   - Auth is the `Authorization: Bearer` header; keys look like `ua_live_…`.
+ *   - Billing is per returned result (12 credits/tweet; $1 = 100k credits).
+ *     429 `quota_exceeded` means credits ran out, not request rate limiting.
+ *   - Errors are proper HTTP status codes with `{"error":{"code","message"}}`
+ *     bodies (402 = no auth header, an x402 payment challenge).
+ *   - `createdAt` keeps Twitter's legacy date format — `toIso` handles it.
+ *   - The single-tweet endpoint can return `author.followers = 0` and
+ *     `author.avatar = ""` even when search shows real values; tweet-level
+ *     author fields are best-effort.
+ *   - Upstream has no per-tweet `rest_id` / `conversation_id`, and no
+ *     profile `location` / `statusesCount` / `isProtected` — the shared
+ *     interfaces keep those slots and they stay undefined.
+ * Do not add schema fields without re-verifying against the live API
+ * (`pnpm x:smoke`) or the reference at https://aiapikey.ai/docs/reference.
  */
 
-const BASE_URL = 'https://api.scraper.tech';
+const BASE_URL = 'https://aiapikey.ai';
 const REQUEST_TIMEOUT_MS = 30_000;
 
 export type SearchType = 'Top' | 'Latest' | 'Media' | 'People' | 'Lists';
@@ -42,7 +46,7 @@ export class XApiError extends Error {
   }
 }
 
-/** Metrics arrive as numbers for some fields and strings for others. */
+/** Numbers may arrive as numbers or numeric strings. */
 const num = () =>
   z.preprocess(
     (value) => (value === null || value === '' ? undefined : value),
@@ -53,89 +57,51 @@ const str = () => z.string().nullish().transform((v) => v ?? undefined);
 
 const bool = () => z.boolean().optional().catch(undefined);
 
-const searchUserInfoSchema = z.object({
-  rest_id: str(),
-  screen_name: str(),
+const authorSchema = z.object({
   name: str(),
-  description: str(),
-  location: str(),
-  created_at: str(),
-  url: str(),
+  screenName: str(),
   avatar: str(),
-  followers_count: num(),
-  friends_count: num(),
-  favorites_count: num(),
+  followers: num(),
   verified: bool(),
-  verified_type: str(),
 });
 
-const searchTweetSchema = z.object({
-  tweet_id: z.string(),
-  text: str(),
-  created_at: str(),
-  conversation_id: str(),
-  lang: str(),
-  type: str(),
-  screen_name: str(),
-  favorites: num(),
-  retweets: num(),
-  replies: num(),
-  quotes: num(),
-  views: num(),
+const metricsSchema = z.object({
   bookmarks: num(),
-  user_info: searchUserInfoSchema.optional().catch(undefined),
+  favorites: num(),
+  quotes: num(),
+  replies: num(),
+  retweets: num(),
+  views: num(),
+});
+
+/** Shared shape of /v1/x/search, /v1/x/tweets and timeline-style endpoints. */
+const tweetSchema = z.object({
+  id: z.string(),
+  url: str(),
+  text: str(),
+  createdAt: str(),
+  language: str(),
+  author: authorSchema.nullish().transform((v) => v ?? undefined).catch(undefined),
+  metrics: metricsSchema.nullish().transform((v) => v ?? undefined).catch(undefined),
+  hashtags: z.array(z.string()).optional().catch(undefined),
+  mentions: z.array(z.string()).optional().catch(undefined),
 });
 
 const searchResponseSchema = z.object({
-  timeline: z.array(searchTweetSchema).default([]),
-  next_cursor: str(),
-  prev_cursor: str(),
+  tweets: z.array(tweetSchema).default([]),
+  nextCursor: str(),
+  previousCursor: str(),
 });
 
-const screennameResponseSchema = z.object({
-  status: str(),
-  profile: str(),
-  rest_id: str(),
+const userResponseSchema = z.object({
   id: str(),
   name: str(),
-  desc: str(),
-  location: str(),
-  protected: bool(),
-  blue_verified: bool(),
-  // Scraper.tech naming: friends = following count, sub_count = followers.
-  friends: num(),
-  sub_count: num(),
-  statuses_count: num(),
-  media_count: num(),
-  created_at: str(),
+  screenName: str(),
   avatar: str(),
-});
-
-const tweetAuthorSchema = z.object({
-  rest_id: str(),
-  screen_name: str(),
-  name: str(),
-  sub_count: num(),
-  blue_verified: bool(),
-  image: str(),
-});
-
-const tweetDetailResponseSchema = z.object({
-  id: z.string(),
-  text: str(),
-  display_text: str(),
-  created_at: str(),
-  conversation_id: str(),
-  lang: str(),
-  status: str(),
-  likes: num(),
-  retweets: num(),
-  replies: num(),
-  quotes: num(),
-  views: num(),
-  bookmarks: num(),
-  in_reply_to_screen_name: str(),
-  author: tweetAuthorSchema.optional().catch(undefined),
+  followers: num(),
+  verified: bool(),
+  bio: str(),
+  createdAt: str(),
 });
 
 export type SearchPage = {
@@ -208,6 +174,34 @@ function postUrl(handle: string | undefined, id: string): string {
   return `https://x.com/${handle ?? 'i'}/status/${id}`;
 }
 
+function toPost(tweet: z.infer<typeof tweetSchema>): XPost {
+  return {
+    id: tweet.id,
+    text: tweet.text ?? '',
+    createdAtRaw: tweet.createdAt,
+    createdAtIso: toIso(tweet.createdAt),
+    author: {
+      // Upstream provides no author rest_id on tweets — see header note.
+      restId: undefined,
+      handle: tweet.author?.screenName ?? '',
+      name: tweet.author?.name,
+      followers: tweet.author?.followers,
+      verified: tweet.author?.verified,
+    },
+    metrics: {
+      favorites: tweet.metrics?.favorites,
+      replies: tweet.metrics?.replies,
+      retweets: tweet.metrics?.retweets,
+      quotes: tweet.metrics?.quotes,
+      views: tweet.metrics?.views,
+      bookmarks: tweet.metrics?.bookmarks,
+    },
+    conversationId: undefined,
+    lang: tweet.language,
+    url: tweet.url || postUrl(tweet.author?.screenName, tweet.id),
+  };
+}
+
 export interface XApiClientConfig {
   apiKey: string;
   baseUrl?: string;
@@ -227,98 +221,65 @@ export class XApiClient {
   }
 
   /** Search public posts. X advanced operators (phrases, lang:, -filter:,
-   *  since:/until:) pass through — verified 2026-11-16. */
+   *  since:/until:, min_faves:) pass through — verified 2026-11-25. */
   async search(query: string, options: SearchOptions = {}): Promise<SearchPage> {
-    const data = await this.request('search.php', {
+    const data = await this.request('v1/x/search', {
       query,
-      search_type: options.searchType ?? 'Latest',
+      searchType: options.searchType ?? 'Latest',
       cursor: options.cursor ?? '',
     }, searchResponseSchema);
 
-    const posts = data.timeline.map((tweet) => {
-      const handle = tweet.user_info?.screen_name ?? tweet.screen_name;
-      return {
-        id: tweet.tweet_id,
-        text: tweet.text ?? '',
-        createdAtRaw: tweet.created_at,
-        createdAtIso: toIso(tweet.created_at),
-        author: {
-          restId: tweet.user_info?.rest_id,
-          handle: handle ?? '',
-          name: tweet.user_info?.name,
-          followers: tweet.user_info?.followers_count,
-          verified: tweet.user_info?.verified,
-        },
-        metrics: {
-          favorites: tweet.favorites,
-          replies: tweet.replies,
-          retweets: tweet.retweets,
-          quotes: tweet.quotes,
-          views: tweet.views,
-          bookmarks: tweet.bookmarks,
-        },
-        conversationId: tweet.conversation_id,
-        lang: tweet.lang,
-        url: postUrl(handle, tweet.tweet_id),
-      } satisfies XPost;
-    });
-
-    return { posts, nextCursor: data.next_cursor, prevCursor: data.prev_cursor };
+    return {
+      posts: data.tweets.map(toPost),
+      nextCursor: data.nextCursor,
+      prevCursor: data.previousCursor,
+    };
   }
 
-  /** Public profile info by handle. */
+  /** Public profile info by handle. Upstream has no location / tweet count /
+   *  protected flag — those XProfile slots stay undefined (see header note). */
   async profile(handle: string): Promise<XProfile> {
-    const data = await this.request('screenname.php', {
-      screenname: handle,
-      rest_id: '',
-    }, screennameResponseSchema);
+    const data = await this.request('v1/x/users', { username: handle }, userResponseSchema);
 
     return {
-      handle: data.profile ?? handle,
-      restId: data.rest_id ?? data.id ?? '',
+      handle: data.screenName ?? handle,
+      restId: data.id ?? '',
       name: data.name,
-      description: data.desc,
-      location: data.location,
-      followers: data.sub_count,
-      following: data.friends,
-      statusesCount: data.statuses_count,
-      verified: data.blue_verified,
-      isProtected: data.protected,
-      createdAtRaw: data.created_at,
-      createdAtIso: toIso(data.created_at),
+      description: data.bio,
+      location: undefined,
+      followers: data.followers,
+      following: undefined,
+      statusesCount: undefined,
+      verified: data.verified,
+      isProtected: undefined,
+      createdAtRaw: data.createdAt,
+      createdAtIso: toIso(data.createdAt),
       avatar: data.avatar,
     };
   }
 
-  /** Single tweet by id. Note: returns the same normalized XPost shape as
-   *  search(), although the upstream schema is different. */
+  /** Single tweet by id. Same normalized XPost shape as search(). Author
+   *  fields here are best-effort upstream (followers may be 0). */
   async tweet(id: string): Promise<XPost> {
-    const data = await this.request('tweet.php', { id }, tweetDetailResponseSchema);
+    const data = await this.request('v1/x/tweets', { id }, tweetSchema);
+    return toPost(data);
+  }
 
-    return {
-      id: data.id,
-      text: data.display_text ?? data.text ?? '',
-      createdAtRaw: data.created_at,
-      createdAtIso: toIso(data.created_at),
-      author: {
-        restId: data.author?.rest_id,
-        handle: data.author?.screen_name ?? '',
-        name: data.author?.name,
-        followers: data.author?.sub_count,
-        verified: data.author?.blue_verified,
-      },
-      metrics: {
-        favorites: data.likes,
-        replies: data.replies,
-        retweets: data.retweets,
-        quotes: data.quotes,
-        views: data.views,
-        bookmarks: data.bookmarks,
-      },
-      conversationId: data.conversation_id,
-      lang: data.lang,
-      url: postUrl(data.author?.screen_name, data.id),
-    };
+  /** Extract a human-readable message from an error body. Shape is
+   *  `{"error":{"code","message"}}`; tolerate a legacy string form too. */
+  private static errorMessage(json: unknown, fallback: string): string {
+    if (json !== null && typeof json === 'object' && 'error' in json) {
+      const error = (json as { error: unknown }).error;
+      if (typeof error === 'string' && error.length > 0) return error;
+      if (error !== null && typeof error === 'object') {
+        const { code, message } = error as { code?: unknown; message?: unknown };
+        const text = typeof message === 'string' ? message : '';
+        const name = typeof code === 'string' ? code : '';
+        if (text && name) return `${name}: ${text}`;
+        if (text || name) return text || name;
+      }
+    }
+    return fallback;
   }
 
   private async request<S extends z.ZodTypeAny>(
@@ -334,7 +295,7 @@ export class XApiClient {
     let response: Response;
     try {
       response = await this.fetchImpl(url.toString(), {
-        headers: { 'Scraper-Key': this.apiKey },
+        headers: { Authorization: `Bearer ${this.apiKey}` },
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
     } catch (error) {
@@ -346,19 +307,31 @@ export class XApiClient {
     }
 
     if (response.status === 429) {
-      throw new XApiError('rate limited by scraper.tech', {
+      // aiapikey.ai: 429 = quota_exceeded (credits), not request rate limiting.
+      throw new XApiError('X data provider quota exhausted (out of credits)', {
         kind: 'rate_limited',
         status: 429,
       });
     }
     if (!response.ok) {
-      throw new XApiError(`${endpoint} responded HTTP ${response.status}`, {
+      let body: unknown = null;
+      try {
+        body = await response.json();
+      } catch {
+        // Non-JSON error body — fall through to the status-code message.
+      }
+      const fallback =
+        response.status === 401
+          ? 'unauthorized — API key missing, invalid or revoked'
+          : response.status === 402
+            ? 'payment required — request went out without an API key'
+            : `${endpoint} responded HTTP ${response.status}`;
+      throw new XApiError(XApiClient.errorMessage(body, fallback), {
         kind: 'upstream',
         status: response.status,
       });
     }
 
-    // Upstream returns HTTP 200 for business errors — check the body first.
     let json: unknown;
     try {
       json = await response.json();
@@ -368,16 +341,16 @@ export class XApiClient {
         status: response.status,
       });
     }
+    // Defensive: a 200 carrying an in-body error object should not pass as data.
     if (
       json !== null &&
       typeof json === 'object' &&
       'error' in json &&
-      typeof (json as { error: unknown }).error === 'string' &&
-      (json as { error: string }).error.length > 0
+      (json as { error: unknown }).error !== undefined &&
+      (json as { error: unknown }).error !== null
     ) {
-      const message = (json as { error: string }).error;
-      throw new XApiError(message, {
-        kind: /rate|limit/i.test(message) ? 'rate_limited' : 'upstream',
+      throw new XApiError(XApiClient.errorMessage(json, `${endpoint} returned an error body`), {
+        kind: 'upstream',
         status: response.status,
       });
     }

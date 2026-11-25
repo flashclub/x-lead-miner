@@ -1,19 +1,20 @@
 /**
- * Contract smoke test for the Scraper.tech X API — 3 authorized requests
+ * Contract smoke test for the AI API Key X API — 3 authorized requests
  * asserting the shapes src/lib/x-api.ts relies on (see docs/x-api.md).
  *
  *   pnpm x:smoke
  *
- * Requires SCRAPER_API_KEY in .dev.vars (or the environment). A failure
- * usually means the upstream schema changed — re-verify against the
- * Playground before editing x-api.ts. Never prints the key.
+ * Requires AIAPIKEY_KEY in .dev.vars (or the environment). A failure
+ * usually means the upstream schema changed — re-verify against
+ * https://aiapikey.ai/docs/reference before editing x-api.ts.
+ * Costs ~50 tweets of credits (12 credits each). Never prints the key.
  */
 import { XApiClient } from '../src/lib/x-api';
 
 async function main() {
-  const apiKey = process.env.SCRAPER_API_KEY;
+  const apiKey = process.env.AIAPIKEY_KEY;
   if (!apiKey) {
-    console.error('SCRAPER_API_KEY is not set — put it in .dev.vars or the environment');
+    console.error('AIAPIKEY_KEY is not set — put it in .dev.vars or the environment');
     process.exit(1);
   }
 

@@ -1,8 +1,7 @@
 /*
- * Theme: minimal — the original light, low-decoration MonoBoard look,
- * kept as a preset for products that want a plain surface.
- * Switch by editing the import in src/app/globals.css or re-scaffolding
- * with `--theme minimal`.
+ * Theme: minimal — light, low-decoration look, kept as a preset for
+ * products that want a plain surface.
+ * Switch by editing the import in src/app/globals.css.
  */
 
 :root {
