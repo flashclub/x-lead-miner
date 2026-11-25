@@ -159,6 +159,75 @@
     "scoringInProgress": "scoring…",
     "scoreTimeTitle": "per-post scoring latency (seconds, 4 decimals)"
   },
+  "leadAnalyst": {
+    "name": "Lead Analyst",
+    "scorerName": "Intent scorer",
+    "analyze": "Lead card",
+    "analyzeTitle": "Ask the second model (Qwen3-4B + LoRA, served on Modal) for a structured lead card. One click is one model call.",
+    "retry": "Retry",
+    "analyzingElapsed": "Lead Analyst analyzing… {sec}s",
+    "analyzingCount": "Lead Analyst analyzing {n, plural, =1 {one post} other {# posts}}…",
+    "wakingHint": "the model is being started; that usually takes a minute or so, on a slow machine several",
+    "seconds": "{sec}s",
+    "strength": "lead strength",
+    "cardTimeTitle": "per-post analyst latency (seconds)",
+    "details": "Show evidence and reasoning",
+    "evidence": "From the post",
+    "rationale": "Why",
+    "replyHint": "Reply direction",
+    "noReplyHint": "No vendor could usefully reply here",
+    "failed": {
+      "unavailable": "The Lead Analyst is still starting or unreachable — try again in a minute; the score above is unaffected",
+      "rate": "Too many lead-card requests — try again in a while",
+      "budget": "The Lead Analyst has used its GPU budget for today — back tomorrow",
+      "rejected": "The model could not produce a valid card for this post"
+    },
+    "intent": {
+      "recommend_request": "Asking for a recommendation",
+      "alternative_seek": "Looking for an alternative",
+      "complaint": "Complaining about a product",
+      "feature_wish": "Wishing for a feature",
+      "praise": "Praising a product",
+      "noise": "Not a lead"
+    },
+    "stage": {
+      "now": "Buying now",
+      "exploring": "Exploring",
+      "someday": "Someday",
+      "none": "No purchase"
+    },
+    "domain": {
+      "dev-tools": "Developer tools",
+      "marketing-seo": "Marketing & SEO",
+      "finance-accounting": "Finance & accounting",
+      "design-creative": "Design & creative",
+      "productivity-notes": "Productivity & notes",
+      "education-learning": "Education & learning",
+      "health-fitness": "Health & fitness",
+      "ecommerce-retail": "E-commerce & retail",
+      "crm-sales": "CRM & sales",
+      "communication-social": "Communication & social",
+      "content-media": "Content & media",
+      "data-ai": "Data & AI",
+      "web-hosting": "Web hosting",
+      "hr-recruiting": "HR & recruiting",
+      "travel-local": "Travel & local",
+      "hardware-devices": "Hardware & devices",
+      "gaming": "Gaming",
+      "other": "Other"
+    },
+    "playground": {
+      "title": "Try both models on one post",
+      "subtitle": "Same input, two models: the scorer that runs inside this site, and the Lead Analyst that writes a card. Nothing runs until you press the button.",
+      "postLabel": "Post text",
+      "example": "I cancelled my Notion subscription — export is useless and it keeps getting slower. Is there anything better for a small team?",
+      "run": "Run both models",
+      "scorerRunning": "scoring…",
+      "scorerUnavailable": "scorer unavailable",
+      "waiting": "press the button to score this post",
+      "scoreOf100": "buying-intent score, 0–100"
+    }
+  },
   "chat": {
     "title": "Chat",
     "subtitle": "Ask the lead-mining assistant — it knows X search operators and buying-intent signals. Paste a post to get a read on it.",
@@ -205,7 +274,27 @@
     "sidecarUnset": "INTENT_SERVICE_URL unset",
     "metricsTitle": "Latest training metrics",
     "quickStart": "Quick start",
-    "readmeNote": "Full story and data-hygiene notes: intent/README.md"
+    "readmeNote": "Full story and data-hygiene notes: intent/README.md",
+    "twoModels": {
+      "title": "Two models on this site",
+      "subtitle": "They are kept apart on purpose: the small scorer reads every post inside the Worker; the analyst is asked only about the posts that pass, because it runs on a GPU.",
+      "colModel": "Model",
+      "colRuns": "Runs",
+      "colOutput": "Output",
+      "colSpeed": "Speed",
+      "colMeasured": "Measured",
+      "scorerModel": "Intent scorer — bge-base-en-v1.5 embedding + a 49,281-parameter head",
+      "scorerRuns": "inside the Cloudflare Worker (Workers AI)",
+      "scorerOutput": "one 0–1 buying-intent score",
+      "scorerSpeed": "about 0.2 s per post",
+      "scorerMeasured": "accuracy 0.886 against teacher labels on a 1,179-post holdout",
+      "analystModel": "Lead Analyst — Qwen3-4B + LoRA, trained on 7,854 teacher-labelled posts",
+      "analystRuns": "on Modal, started on demand",
+      "analystOutput": "a lead card: intent type, buying stage, domain, quoted evidence, reason, reply direction",
+      "analystSpeed": "about 6 s per post once started, and a batch of posts costs about the same; the first request after a pause has to start the model — about a minute on a fast machine, several minutes on a slow one",
+      "analystMeasured": "intent type agrees with a 150-post human-labelled gold set on 82.7% of posts (whole-split estimate 87.3% ± 6.6); the teacher model itself reaches 83.3%",
+      "docsLink": "How it is served, what it costs and where its limits are: docs/lead-analyst.md in the repository."
+    }
   },
   "billing": {
     "title": "Billing",

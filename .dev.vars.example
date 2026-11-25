@@ -28,3 +28,10 @@ MULERUN_LLM_MODEL=gemini-2.5-flash
 # Local PyTorch intent sidecar (intent/serve.py). Unset ⇒ search results
 # simply carry no scores.
 # INTENT_SERVICE_URL=http://127.0.0.1:5019
+
+# Lead Analyst — the SECOND model (Qwen3-4B + LoRA, served on Modal). Optional:
+# unset ⇒ the site offers no lead cards and everything else works as before.
+# Details: docs/lead-analyst.md. Token: `modal workspace proxy-tokens create`.
+# ANALYST_URL=https://zhangwenzhu998--xlead-analyst-serve-serve.us-east.modal.run
+# MODAL_KEY=wk-...
+# MODAL_SECRET=ws-...
