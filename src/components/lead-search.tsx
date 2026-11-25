@@ -4,15 +4,6 @@ import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LeadCardView } from '@/components/lead-card';
-import {
-  ANALYST_AUTO_MAX,
-  ANALYST_AUTO_THRESHOLD,
-  ANALYST_CLIENT_TIMEOUT_MS,
-  type AnalystEntry,
-  type AnalystFailureReason,
-  type AnalyzeResult,
-} from '@/lib/lead-card-types';
 import type { XPost } from '@/lib/x-api';
 
 type SearchType = 'Latest' | 'Top';
@@ -44,7 +35,6 @@ function timeAgo(iso: string | undefined, t: TimeAgoT): string {
 
 export function LeadSearch() {
   const t = useTranslations('leadSearch');
-  const tAnalyst = useTranslations('leadAnalyst');
   const [query, setQuery] = useState(EXAMPLE_QUERIES[0]);
   const [searchType, setSearchType] = useState<SearchType>('Latest');
   const [posts, setPosts] = useState<XPost[]>([]);
@@ -56,13 +46,6 @@ export function LeadSearch() {
   const [scoringSec, setScoringSec] = useState<string | null>(null);
   const [scoringPending, setScoringPending] = useState(false);
   const searchSeqRef = useRef(0);
-  // The Lead Analyst is the SECOND model (see lead-card-types.ts): one entry per
-  // post id, undefined until the analyst is asked about that post. It keeps its
-  // own sequence number because it is slower than scoring — "Load more" bumps
-  // searchSeqRef and must not cancel cards still on their way for posts that
-  // are already on screen.
-  const [analyst, setAnalyst] = useState<Record<string, AnalystEntry>>({});
-  const analystSeqRef = useRef(0);
 
   // Results render immediately; scores stream in asynchronously per batch,
   // each post carrying its OWN model latency (per-item timing server-side).
@@ -99,13 +82,6 @@ export function LeadSearch() {
             : post;
         })
       );
-      // Second model: the posts this scorer rates at or above the threshold get
-      // a lead card automatically (at most ANALYST_AUTO_MAX per page). The
-      // scores above are left exactly as they came.
-      const strong = batch
-        .filter((_, index) => data.scores![index] >= ANALYST_AUTO_THRESHOLD)
-        .slice(0, ANALYST_AUTO_MAX);
-      void analyzeBatch(seq, strong);
       if (typeof data.elapsedSec === 'number') {
         setScoringSec(data.elapsedSec.toFixed(4));
       }
@@ -116,68 +92,9 @@ export function LeadSearch() {
     }
   }
 
-  // The Lead Analyst sits behind /api/leads/analyze and is a separate model from
-  // the scorer above. A post is sent to it either automatically (score at or
-  // above ANALYST_AUTO_THRESHOLD) or when the reader clicks "analyze" — never
-  // on page load, because every request runs a GPU model.
-  async function analyzeBatch(seq: number, batch: XPost[]) {
-    if (batch.length === 0) return;
-    const fail = (reason: AnalystFailureReason) =>
-      setAnalyst((current) => {
-        const next = { ...current };
-        for (const post of batch) next[post.id] = { state: 'failed', reason };
-        return next;
-      });
-    setAnalyst((current) => {
-      const next = { ...current };
-      for (const post of batch) next[post.id] = { state: 'loading', startedAt: Date.now() };
-      return next;
-    });
-    try {
-      const response = await fetch('/api/leads/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ texts: batch.map((post) => post.text) }),
-        signal: AbortSignal.timeout(ANALYST_CLIENT_TIMEOUT_MS),
-      });
-      if (!response.ok) {
-        if (analystSeqRef.current !== seq) return; // a newer search superseded this batch
-        const body = (await response.json().catch(() => ({}))) as { code?: string };
-        if (response.status === 429) fail(body.code === 'budget' ? 'budget' : 'rate');
-        else fail('unavailable');
-        return;
-      }
-      const data = (await response.json()) as AnalyzeResult;
-      if (analystSeqRef.current !== seq) return;
-      if (!Array.isArray(data.results) || data.results.length !== batch.length) {
-        fail('unavailable');
-        return;
-      }
-      setAnalyst((current) => {
-        const next = { ...current };
-        batch.forEach((post, index) => {
-          const result = data.results[index];
-          next[post.id] =
-            result.status === 'ok' && result.card
-              ? { state: 'ok', card: result.card, sec: data.timesSec[index] ?? null }
-              : { state: 'failed', reason: 'rejected' };
-        });
-        return next;
-      });
-    } catch {
-      if (analystSeqRef.current === seq) fail('unavailable');
-    }
-  }
-
   async function runSearch(append: boolean, cursor?: string) {
     if (!query.trim() || loading || loadingMore) return;
     searchSeqRef.current += 1;
-    if (!append) {
-      // a fresh search replaces the list: cards still on their way for the old
-      // one are dropped
-      analystSeqRef.current += 1;
-      setAnalyst({});
-    }
     if (append) {
       setLoadingMore(true);
     } else {
@@ -207,8 +124,6 @@ export function LeadSearch() {
       setLoadingMore(false);
     }
   }
-
-  const analystLoading = Object.values(analyst).filter((entry) => entry.state === 'loading').length;
 
   return (
     <div className="space-y-4">
@@ -279,11 +194,6 @@ export function LeadSearch() {
                 : t('scoringTime', { sec: scoringSec ?? '0.0000' })}
             </p>
           )}
-          {analystLoading > 0 && (
-            <p className="font-mono text-sm text-text-subtle" role="status" data-testid="analyst-status">
-              {tAnalyst('analyzingCount', { n: analystLoading })}
-            </p>
-          )}
           {posts.map((post) => (
             <Card key={post.id} className="p-5">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -346,10 +256,6 @@ export function LeadSearch() {
                   {t('openOnX')}
                 </a>
               </div>
-              <LeadCardView
-                entry={analyst[post.id]}
-                onAnalyze={() => void analyzeBatch(analystSeqRef.current, [post])}
-              />
             </Card>
           ))}
         </div>

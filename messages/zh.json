@@ -159,75 +159,6 @@
     "scoringInProgress": "模型打分中…",
     "scoreTimeTitle": "单条打分耗时（秒，精确到小数点后 4 位）"
   },
-  "leadAnalyst": {
-    "name": "线索分析师",
-    "scorerName": "意向打分器",
-    "analyze": "生成线索卡",
-    "analyzeTitle": "让第二个模型（Qwen3-4B + LoRA，部署在 Modal）给出一张结构化线索卡。点一次调用一次模型。",
-    "retry": "重试",
-    "analyzingElapsed": "线索分析师分析中… {sec}s",
-    "analyzingCount": "线索分析师正在分析 {n} 条帖子…",
-    "wakingHint": "正在启动模型；通常一分钟左右，机器慢时要几分钟",
-    "seconds": "{sec}s",
-    "strength": "线索强度",
-    "cardTimeTitle": "单条分析耗时（秒）",
-    "details": "展开引用与理由",
-    "evidence": "原帖引用",
-    "rationale": "判断理由",
-    "replyHint": "回复方向",
-    "noReplyHint": "这条帖子没有厂商可以切入的回复方向",
-    "failed": {
-      "unavailable": "线索分析师正在启动或暂时连不上，过一分钟再试；上面的分数不受影响",
-      "rate": "线索卡请求太频繁，过一会儿再试",
-      "budget": "线索分析师今天的 GPU 额度已用完，明天恢复",
-      "rejected": "模型没能为这条帖子生成有效的线索卡"
-    },
-    "intent": {
-      "recommend_request": "求推荐",
-      "alternative_seek": "找替代品",
-      "complaint": "抱怨产品",
-      "feature_wish": "希望有某功能",
-      "praise": "称赞产品",
-      "noise": "不是线索"
-    },
-    "stage": {
-      "now": "现在就买",
-      "exploring": "正在了解",
-      "someday": "以后可能买",
-      "none": "没有购买意向"
-    },
-    "domain": {
-      "dev-tools": "开发工具",
-      "marketing-seo": "营销与 SEO",
-      "finance-accounting": "财务与会计",
-      "design-creative": "设计与创意",
-      "productivity-notes": "效率与笔记",
-      "education-learning": "教育与学习",
-      "health-fitness": "健康与健身",
-      "ecommerce-retail": "电商与零售",
-      "crm-sales": "CRM 与销售",
-      "communication-social": "通讯与社交",
-      "content-media": "内容与媒体",
-      "data-ai": "数据与 AI",
-      "web-hosting": "网站托管",
-      "hr-recruiting": "人力资源与招聘",
-      "travel-local": "旅行与本地生活",
-      "hardware-devices": "硬件与设备",
-      "gaming": "游戏",
-      "other": "其他"
-    },
-    "playground": {
-      "title": "同一条帖子，两个模型各看一次",
-      "subtitle": "同一个输入，两个模型：站内运行的打分器，以及会写出线索卡的线索分析师。按下按钮之前不会调用任何模型。",
-      "postLabel": "帖子文本",
-      "example": "I cancelled my Notion subscription — export is useless and it keeps getting slower. Is there anything better for a small team?",
-      "run": "两个模型都跑一遍",
-      "scorerRunning": "打分中…",
-      "scorerUnavailable": "打分器不可用",
-      "waiting": "按下按钮给这条帖子打分",
-      "scoreOf100": "购买意向分，0–100"
-    }
-  },
   "chat": {
     "title": "聊天",
     "subtitle": "向线索挖掘助手提问——它懂 X 搜索操作符和购买意向信号。可以粘贴一条帖子让它分析。",
@@ -274,27 +205,7 @@
     "sidecarUnset": "未配置 INTENT_SERVICE_URL",
     "metricsTitle": "最新训练指标",
     "quickStart": "快速开始",
-    "readmeNote": "完整说明与数据卫生注意事项：intent/README.md",
-    "twoModels": {
-      "title": "站内的两个模型",
-      "subtitle": "两者刻意分开：小打分器在 Worker 里读完每一条帖子；分析师只看过线的帖子，因为它跑在 GPU 上。",
-      "colModel": "模型",
-      "colRuns": "运行位置",
-      "colOutput": "输出",
-      "colSpeed": "速度",
-      "colMeasured": "实测",
-      "scorerModel": "意向打分器——bge-base-en-v1.5 向量 + 49,281 参数的小网络",
-      "scorerRuns": "Cloudflare Worker 内（Workers AI）",
-      "scorerOutput": "一个 0–1 的购买意向分",
-      "scorerSpeed": "每条约 0.2 秒",
-      "scorerMeasured": "在 1,179 条留出帖上，对老师标签的准确率 0.886",
-      "analystModel": "线索分析师——Qwen3-4B + LoRA，用 7,854 条老师标注的帖子训练",
-      "analystRuns": "Modal，按需启动",
-      "analystOutput": "一张线索卡：意向类型、购买阶段、品类、原帖引用、理由、回复方向",
-      "analystSpeed": "启动后每条约 6 秒，一批帖子合计也差不多；间隔一段时间后的第一次请求要启动模型——快的机器一分钟左右，慢的机器要几分钟",
-      "analystMeasured": "在 150 条人工金标上，意向类型一致率 82.7%（换算到整个测试集 87.3% ± 6.6）；老师模型自己是 83.3%",
-      "docsLink": "部署方式、成本和限制见仓库里的 docs/lead-analyst.md。"
-    }
+    "readmeNote": "完整说明与数据卫生注意事项：intent/README.md"
   },
   "billing": {
     "title": "账单",

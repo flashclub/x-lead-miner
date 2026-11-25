@@ -4,7 +4,6 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getServerVar } from '@/lib/server-env';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AnalystPlayground } from '@/components/analyst-playground';
 
 export const dynamic = 'force-dynamic';
 
@@ -158,43 +157,6 @@ python3 serve.py   # then set INTENT_SERVICE_URL=http://127.0.0.1:5019`;
           })}
         </p>
       </Card>
-
-      {/* The second model. Static copy and a client-side playground only: unlike
-          the four steps above this reads nothing from disk, so it renders on
-          Workers too. Nothing calls a model until the reader presses a button. */}
-      <Card className="mt-4">
-        <h2 className="font-display text-lg font-semibold">{t('twoModels.title')}</h2>
-        <p className="mt-2 max-w-3xl text-sm text-text-muted">{t('twoModels.subtitle')}</p>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-            <thead>
-              <tr className="font-mono text-xs text-text-subtle">
-                {(['colModel', 'colRuns', 'colOutput', 'colSpeed', 'colMeasured'] as const).map((key) => (
-                  <th key={key} className="border-b border-border py-2 pr-4 font-normal">
-                    {t(`twoModels.${key}`)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(['scorer', 'analyst'] as const).map((row) => (
-                <tr key={row} className="align-top" data-testid={`two-models-${row}`}>
-                  {(['Model', 'Runs', 'Output', 'Speed', 'Measured'] as const).map((column) => (
-                    <td key={column} className="border-b border-border py-3 pr-4 text-text-muted">
-                      {t(`twoModels.${row}${column}`)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-3 text-sm text-text-muted">{t('twoModels.docsLink')}</p>
-      </Card>
-
-      <div className="mt-4">
-        <AnalystPlayground />
-      </div>
     </div>
   );
 }
