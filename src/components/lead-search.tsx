@@ -4,20 +4,18 @@ import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Segmented } from '@/components/ui/segmented';
 import { LoginRequiredModal } from '@/components/login-required-modal';
+import { SearchComposer } from '@/components/search-composer';
 import type { XPost } from '@/lib/x-api';
 
 type SearchType = 'Latest' | 'Top';
 
+const DEFAULT_RAW_QUERY = '"anyone recommend" lang:en -filter:replies';
+
 /** Server-reported free-quota state. `limit` is null for signed-in users
  *  (no cap until billing exists). */
 type Quota = { used: number; limit: number | null; loggedIn: boolean };
-
-const EXAMPLE_QUERIES = [
-  '"anyone recommend" lang:en -filter:replies',
-  '"I wish there was" app lang:en',
-  '"alternative to" lang:en -filter:replies',
-];
 
 function fmtCount(count: number | undefined): string {
   if (count === undefined) return '–';
@@ -68,8 +66,6 @@ export function LeadSearch({
   enabledProviders?: readonly string[];
 }) {
   const t = useTranslations('leadSearch');
-  const [query, setQuery] = useState(EXAMPLE_QUERIES[0]);
-  const [searchType, setSearchType] = useState<SearchType>('Latest');
   const [posts, setPosts] = useState<XPost[]>([]);
   const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
@@ -81,6 +77,15 @@ export function LeadSearch({
   const [quota, setQuota] = useState<Quota | null>(initialQuota);
   const [showLoginModal, setShowLoginModal] = useState(initialGateOpen);
   const searchSeqRef = useRef(0);
+  // Composer mode (default) vs raw-syntax mode for power users.
+  const [advanced, setAdvanced] = useState(false);
+  const [rawQuery, setRawQuery] = useState(DEFAULT_RAW_QUERY);
+  const [rawType, setRawType] = useState<SearchType>('Latest');
+  /** The query the current result list belongs to — "Load more" replays it. */
+  const lastSearchRef = useRef<{ query: string; type: SearchType }>({
+    query: DEFAULT_RAW_QUERY,
+    type: 'Latest',
+  });
 
   // Results render immediately; scores stream in asynchronously per batch,
   // each post carrying its OWN model latency (per-item timing server-side).
@@ -133,7 +138,8 @@ export function LeadSearch({
   }
 
   async function runSearch(append: boolean, cursor?: string) {
-    if (!query.trim() || loading || loadingMore) return;
+    const { query, type } = lastSearchRef.current;
+    if (!query.trim() || (!append && loading) || loadingMore) return;
     searchSeqRef.current += 1;
     if (append) {
       setLoadingMore(true);
@@ -142,7 +148,7 @@ export function LeadSearch({
     }
     setError(null);
     try {
-      const params = new URLSearchParams({ query, searchType });
+      const params = new URLSearchParams({ query, searchType: type });
       if (cursor) params.set('cursor', cursor);
       const response = await fetch(`/api/leads/search?${params.toString()}`);
       const data = (await response.json()) as
@@ -173,53 +179,66 @@ export function LeadSearch({
     }
   }
 
+  /** Composer and advanced mode both land here; the run is recorded against
+   *  this exact query, and "Load more" replays it via lastSearchRef. */
+  function handleSearch(query: string, type: SearchType) {
+    lastSearchRef.current = { query, type };
+    void runSearch(false);
+  }
+
   return (
     <div className="space-y-4">
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          void runSearch(false);
-        }}
-        className="space-y-2"
-      >
-        <div className="flex flex-wrap gap-2">
-          <input
-            type="text"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={t('placeholder')}
-            className="min-w-0 flex-1 rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm text-text placeholder:text-text-subtle focus:border-border-strong"
-          />
-          <select
-            value={searchType}
-            onChange={(event) => setSearchType(event.target.value as SearchType)}
-            className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text"
-            aria-label={t('ordering')}
+      {advanced ? (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSearch(rawQuery, rawType);
+          }}
+          className="space-y-2"
+        >
+          <div className="flex flex-wrap gap-2">
+            <input
+              type="text"
+              value={rawQuery}
+              onChange={(event) => setRawQuery(event.target.value)}
+              placeholder={t('placeholder')}
+              className="min-w-0 flex-1 rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm text-text placeholder:text-text-subtle focus:border-border-strong"
+            />
+            <Segmented
+              ariaLabel={t('ordering')}
+              value={rawType}
+              options={[
+                [t('sortLatest'), 'Latest'],
+                [t('sortTop'), 'Top'],
+              ]}
+              onChange={setRawType}
+            />
+            <Button type="submit" disabled={loading || !rawQuery.trim()}>
+              {loading ? t('searching') : t('search')}
+            </Button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAdvanced(false)}
+            className="text-xs text-text-subtle transition-colors hover:text-text"
           >
-            <option value="Latest">Latest</option>
-            <option value="Top">Top</option>
-          </select>
-          <Button type="submit" disabled={loading || !query.trim()}>
-            {loading ? t('searching') : t('search')}
-          </Button>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-text-subtle">
-          <span>{t('tryLabel')}</span>
-          {EXAMPLE_QUERIES.map((example) => (
-            <button
-              key={example}
-              type="button"
-              onClick={() => {
-                setQuery(example);
-                void runSearch(false);
-              }}
-              className="rounded border border-border bg-surface px-2 py-0.5 font-mono text-text-muted transition-colors hover:border-border-strong hover:text-text"
-            >
-              {example}
-            </button>
-          ))}
-        </div>
-      </form>
+            {t('standardMode')}
+          </button>
+        </form>
+      ) : (
+        <Card className="relative p-4">
+          <button
+            type="button"
+            onClick={() => setAdvanced(true)}
+            className="absolute right-3 top-3 text-xs text-text-subtle transition-colors hover:text-text"
+          >
+            {t('advancedMode')}
+          </button>
+          <div className="pt-4">
+            <SearchComposer onSearch={handleSearch} disabled={loading} />
+          </div>
+        </Card>
+      )}
 
       {error && (
         <div className="rounded-md border border-border-strong bg-surface px-4 py-3 text-sm text-text">

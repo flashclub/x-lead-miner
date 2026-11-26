@@ -75,6 +75,13 @@ backdrop-blur-md`) — cards stay solid.
 `components/ui/*` (Button/Card/Badge) are original, dependency-free
 implementations.
 
+| Component | Source | Adopted | Changes |
+|---|---|---|---|
+| `components/search-composer.tsx` + `components/ui/segmented.tsx` + `components/ui/select-menu.tsx` | Visual recipes from Aceternity UI (Tabs pill segmented control; outline buttons as chips; signup-form input styling) — https://ui.aceternity.com/components/tabs | 2026-11-26 | rebuilt with semantic tokens and pure CSS transitions; the Aceternity originals depend on motion (framer-motion), which the animation budget forbids, so no motion library is used and the motion-driven effects (spring pill, cursor-following glow) are replaced by standard hover/active transitions. |
+
+`components/ui/*` (Button/Card/Badge) are original, dependency-free
+implementations.
+
 ## Maintenance rules
 
 - Components must use semantic tokens; the only hardcoded colors allowed are

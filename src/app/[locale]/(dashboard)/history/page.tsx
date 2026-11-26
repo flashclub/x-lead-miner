@@ -36,7 +36,7 @@ export default async function HistoryPage({
 
   // A DB hiccup (e.g. migration not applied yet) must not 500 the page —
   // degrade to the empty state like every other failure.
-  let runs: HistoryRun[] = [];
+  const runs: HistoryRun[] = [];
   let usage = { searches: 0, scored: 0 };
   try {
     // sqlite datetimes are UTC without a zone suffix — tag them before Date().
