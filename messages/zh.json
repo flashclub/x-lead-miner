@@ -190,7 +190,14 @@
     "sortTop": "热门",
     "previewLabel": "查询",
     "advancedMode": "高级模式（原始语法）",
-    "standardMode": "← 返回简易模式"
+    "standardMode": "← 返回简易模式",
+    "withProductTitle": "有产品",
+    "noProductTitle": "没有产品",
+    "comingSoonBadge": "即将推出",
+    "withProductHint": "粘贴产品或竞品页面链接，挖掘器将自动从页面生成定向的意向查询。",
+    "productUrlLabel": "产品 URL",
+    "productUrlPlaceholder": "https://example.com/product/123",
+    "comingSoonHint": "产品 URL 挖掘即将上线——服务端就绪后，点此按钮即开始抓取。"
   },
   "history": {
     "title": "历史记录",

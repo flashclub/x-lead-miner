@@ -190,7 +190,14 @@
     "sortTop": "Top",
     "previewLabel": "Query",
     "advancedMode": "Advanced (raw operators)",
-    "standardMode": "← Simple mode"
+    "standardMode": "← Simple mode",
+    "withProductTitle": "Have a product",
+    "noProductTitle": "No product yet",
+    "comingSoonBadge": "Coming soon",
+    "withProductHint": "Paste a product or competitor page and the miner will generate targeted intent queries from it automatically.",
+    "productUrlLabel": "Product URL",
+    "productUrlPlaceholder": "https://example.com/product/123",
+    "comingSoonHint": "Product-URL mining is coming soon — this button will start the crawl once the server side ships."
   },
   "history": {
     "title": "History",

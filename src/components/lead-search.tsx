@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Segmented } from '@/components/ui/segmented';
 import { LoginRequiredModal } from '@/components/login-required-modal';
 import { SearchComposer } from '@/components/search-composer';
@@ -87,6 +88,10 @@ export function LeadSearch({
   });
   /** The stored history run for the CURRENT result page — scores merge into it. */
   const runIdRef = useRef<string | null>(null);
+  // Product-URL mode (left card): interface only — the server side is not
+  // built yet, so submitting shows a heads-up instead of a request.
+  const [productUrl, setProductUrl] = useState('');
+  const [showProductHint, setShowProductHint] = useState(false);
 
   // Results render immediately; scores stream in asynchronously per batch,
   // each post carrying its OWN model latency (per-item timing server-side).
@@ -190,57 +195,105 @@ export function LeadSearch({
 
   return (
     <div className="space-y-4">
-      {advanced ? (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleSearch(rawQuery, rawType);
-          }}
-          className="space-y-2"
-        >
-          <div className="flex flex-wrap gap-2">
-            <input
-              type="text"
-              value={rawQuery}
-              onChange={(event) => setRawQuery(event.target.value)}
-              placeholder={t('placeholder')}
-              className="min-w-0 flex-1 rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm text-text placeholder:text-text-subtle focus:border-border-strong"
-            />
-            <Segmented
-              ariaLabel={t('ordering')}
-              value={rawType}
-              options={[
-                [t('sortLatest'), 'Latest'],
-                [t('sortTop'), 'Top'],
-              ]}
-              onChange={setRawType}
-            />
-            <Button type="submit" disabled={loading || !rawQuery.trim()}>
+      {/* two modes side by side: product-URL mining (UI first) and the live
+          phrase composer. The grid collapses to one column on small screens. */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* —— 有产品：paste a product URL (interface only, server later) —— */}
+        <Card className="flex flex-col p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-display text-sm font-semibold">{t('withProductTitle')}</h2>
+            <Badge className="border-accent text-accent">{t('comingSoonBadge')}</Badge>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-text-muted">{t('withProductHint')}</p>
+          <label
+            htmlFor="product-url"
+            className="mt-3 block text-xs font-medium text-text-subtle"
+          >
+            {t('productUrlLabel')}
+          </label>
+          <input
+            id="product-url"
+            type="url"
+            value={productUrl}
+            onChange={(event) => {
+              setProductUrl(event.target.value);
+              setShowProductHint(false);
+            }}
+            placeholder={t('productUrlPlaceholder')}
+            className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-border-strong"
+          />
+          <div className="mt-auto pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              disabled={loading || productUrl.trim().length === 0}
+              onClick={() => setShowProductHint(true)}
+            >
               {loading ? t('searching') : t('search')}
             </Button>
-          </div>
-          <button
-            type="button"
-            onClick={() => setAdvanced(false)}
-            className="text-xs text-text-subtle transition-colors hover:text-text"
-          >
-            {t('standardMode')}
-          </button>
-        </form>
-      ) : (
-        <Card className="relative p-4">
-          <button
-            type="button"
-            onClick={() => setAdvanced(true)}
-            className="absolute right-3 top-3 text-xs text-text-subtle transition-colors hover:text-text"
-          >
-            {t('advancedMode')}
-          </button>
-          <div className="pt-4">
-            <SearchComposer onSearch={handleSearch} disabled={loading} />
+            {showProductHint && (
+              <p className="mt-2 text-xs leading-relaxed text-text-subtle">
+                {t('comingSoonHint')}
+              </p>
+            )}
           </div>
         </Card>
-      )}
+
+        {/* —— 没有产品：the live composer (current capability) —— */}
+        <Card className="relative flex flex-col p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-display text-sm font-semibold">{t('noProductTitle')}</h2>
+            <button
+              type="button"
+              onClick={() => setAdvanced((current) => !current)}
+              className="text-xs text-text-subtle transition-colors hover:text-text"
+            >
+              {advanced ? t('standardMode') : t('advancedMode')}
+            </button>
+          </div>
+          <div className="mt-3 flex-1">
+            {advanced ? (
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleSearch(rawQuery, rawType);
+                }}
+                className="space-y-2"
+              >
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    type="text"
+                    value={rawQuery}
+                    onChange={(event) => setRawQuery(event.target.value)}
+                    placeholder={t('placeholder')}
+                    className="min-w-0 flex-1 rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm text-text placeholder:text-text-subtle focus:border-border-strong"
+                  />
+                  <Segmented
+                    ariaLabel={t('ordering')}
+                    value={rawType}
+                    options={[
+                      [t('sortLatest'), 'Latest'],
+                      [t('sortTop'), 'Top'],
+                    ]}
+                    onChange={setRawType}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  className="w-full"
+                  disabled={loading || !rawQuery.trim()}
+                >
+                  {loading ? t('searching') : t('search')}
+                </Button>
+              </form>
+            ) : (
+              <SearchComposer onSearch={handleSearch} disabled={loading} />
+            )}
+          </div>
+        </Card>
+      </div>
 
       {error && (
         <div className="rounded-md border border-border-strong bg-surface px-4 py-3 text-sm text-text">
