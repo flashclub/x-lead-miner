@@ -52,7 +52,6 @@ function reportScores(runId: string, batch: XPost[], scores: number[], timesSec?
     }),
   }).catch(() => {});
 }
-
 export function LeadSearch({
   initialQuota = null,
   initialGateOpen = false,
@@ -86,6 +85,8 @@ export function LeadSearch({
     query: DEFAULT_RAW_QUERY,
     type: 'Latest',
   });
+  /** The stored history run for the CURRENT result page — scores merge into it. */
+  const runIdRef = useRef<string | null>(null);
 
   // Results render immediately; scores stream in asynchronously per batch,
   // each post carrying its OWN model latency (per-item timing server-side).
@@ -104,7 +105,6 @@ export function LeadSearch({
         scores?: number[];
         timesSec?: number[];
         elapsedSec?: number;
-        runId?: string;
       };
       if (searchSeqRef.current !== seq) return; // a newer search superseded this batch
       if (!Array.isArray(data.scores) || data.scores.length !== batch.length) return;
@@ -124,8 +124,9 @@ export function LeadSearch({
         })
       );
       // History: merge the model scores into the stored run (see /history).
-      if (typeof data.runId === 'string') {
-        reportScores(data.runId, batch, data.scores, data.timesSec);
+      // The run id comes from the SEARCH response (runIdRef), not this one.
+      if (runIdRef.current) {
+        reportScores(runIdRef.current, batch, data.scores, data.timesSec);
       }
       if (typeof data.elapsedSec === 'number') {
         setScoringSec(data.elapsedSec.toFixed(4));
@@ -152,7 +153,7 @@ export function LeadSearch({
       if (cursor) params.set('cursor', cursor);
       const response = await fetch(`/api/leads/search?${params.toString()}`);
       const data = (await response.json()) as
-        | { posts: XPost[]; nextCursor?: string; quota?: Quota }
+        | { posts: XPost[]; nextCursor?: string; runId?: string; quota?: Quota }
         | { error: string; code?: string; quota?: Quota };
       if (!response.ok || 'error' in data) {
         if ('code' in data && data.code === 'login_required') {
@@ -166,6 +167,7 @@ export function LeadSearch({
         return;
       }
       if (data.quota) setQuota(data.quota);
+      runIdRef.current = data.runId ?? null;
       const fresh = data.posts;
       setPosts((current) => (append ? [...current, ...fresh] : fresh));
       setNextCursor(data.nextCursor);
