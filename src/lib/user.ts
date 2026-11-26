@@ -1,12 +1,12 @@
 import { cookies } from 'next/headers';
 import { auth } from '@/auth';
-import { getDb } from './db';
+import { getD1 } from './db';
 import { ANON_COOKIE } from './anon-cookie';
 
 export { ANON_COOKIE, ANON_COOKIE_MAX_AGE } from './anon-cookie';
 
 /**
- * Anonymous user plumbing + identity resolution.
+ * Anonymous user plumbing + identity resolution, on raw D1 SQL.
  *
  * The middleware hands every browser a `xlm_uid` cookie (no login required to
  * browse); these helpers lazily mirror that id into a x_lead_miner_user row —
@@ -19,6 +19,48 @@ export { ANON_COOKIE, ANON_COOKIE_MAX_AGE } from './anon-cookie';
 /** Free anonymous quota in scored posts. Enforced server-side in
  *  /api/leads/search; signing in lifts it (billing comes later). */
 export const FREE_POST_LIMIT = 100;
+
+export interface UserRow {
+  id: string;
+  anonId: string | null;
+  email: string | null;
+  name: string | null;
+  image: string | null;
+  searchCount: number;
+  scoredCount: number;
+  lastSearchAt: string | null;
+  subscriptionPlan: string;
+  subscriptionStatus: string | null;
+  currentPeriodEnd: string | null;
+  stripeCustomerId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RunRow {
+  id: string;
+  userId: string;
+  query: string;
+  searchType: string;
+  postCount: number;
+  results: string;
+  /** sqlite datetime string (UTC), e.g. "2026-11-26 09:00:00" */
+  createdAt: string;
+}
+
+export interface RecordedPost {
+  id: string;
+  handle: string;
+  name: string | undefined;
+  text: string;
+  score: number | null;
+  sec: number | null;
+  url: string;
+  createdAtIso: string | undefined;
+}
+
+const USER_COLS =
+  '"id","anonId","email","name","image","searchCount","scoredCount","lastSearchAt","subscriptionPlan","subscriptionStatus","currentPeriodEnd","stripeCustomerId","createdAt","updatedAt"';
 
 /** Read the anon id from a request's Cookie header, generating a fresh one
  *  when absent (the caller is responsible for setting it on its response).
@@ -33,17 +75,37 @@ export function anonIdFrom(request: Request): string {
   return value ? decodeURIComponent(value) : crypto.randomUUID();
 }
 
-/** Get-or-create the user row for an anon id. */
-export async function ensureUser(anonId: string) {
-  const db = await getDb();
-  const existing = await db.user.findUnique({ where: { anonId } });
+async function userBy(column: 'anonId' | 'email', value: string): Promise<UserRow | null> {
+  const db = await getD1();
+  const row = await db
+    .prepare(`SELECT ${USER_COLS} FROM "x_lead_miner_user" WHERE "${column}" = ?`)
+    .bind(value)
+    .first<UserRow>();
+  return row ?? null;
+}
+
+/** Get-or-create the user row for an anon id. Survives the create race: the
+ *  anon_id unique index rejects the loser, which then reads the winner. */
+export async function ensureUser(anonId: string): Promise<UserRow> {
+  const db = await getD1();
+  const existing = await userBy('anonId', anonId);
   if (existing) return existing;
-  return db.user.create({ data: { anonId } });
+  const id = crypto.randomUUID();
+  await db
+    .prepare(
+      `INSERT INTO "x_lead_miner_user" ("id","anonId","subscriptionPlan","createdAt","updatedAt")
+       VALUES (?, ?, 'free', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+    )
+    .bind(id, anonId)
+    .run();
+  const created = await userBy('anonId', anonId);
+  if (!created) throw new Error(`user row missing after insert (${anonId})`);
+  return created;
 }
 
 export interface Identity {
   /** The resolved user row — anonymous (cookie) or the account (email). */
-  user: Awaited<ReturnType<typeof ensureUser>>;
+  user: UserRow;
   loggedIn: boolean;
   anonId: string;
 }
@@ -71,48 +133,48 @@ export async function readUserIdentity(): Promise<Identity | null> {
   const anonId = (await cookies()).get(ANON_COOKIE)?.value;
   if (!email && !anonId) return null;
 
-  const db = await getDb();
-  const user = email
-    ? await db.user.findUnique({ where: { email } })
+  const row = email
+    ? await userBy('email', email)
     : anonId
-      ? await db.user.findUnique({ where: { anonId } })
+      ? await userBy('anonId', anonId)
       : null;
-  if (!user) return null;
-  return { user, loggedIn: Boolean(email), anonId: anonId ?? user.anonId ?? '' };
+  if (!row) return null;
+  return { user: row, loggedIn: Boolean(email), anonId: anonId ?? row.anonId ?? '' };
 }
 
 async function resolveIdentity(email: string | undefined, anonId: string): Promise<Identity> {
-  const db = await getDb();
+  const db = await getD1();
   if (email) {
-    let row = await db.user.findUnique({ where: { email } });
+    let row = await userBy('email', email);
     if (!row) {
       // First login with this email: adopt the anonymous row from this
       // browser, so the free quota they already used and their history move
       // with them (the login modal promises exactly this).
-      const anonRow = await db.user.findUnique({ where: { anonId } });
-      row = anonRow
-        ? await db.user.update({ where: { id: anonRow.id }, data: { email } })
-        : await db.user.create({ data: { email } });
+      const anonRow = await userBy('anonId', anonId);
+      if (anonRow) {
+        await db
+          .prepare('UPDATE "x_lead_miner_user" SET "email" = ?, "updatedAt" = CURRENT_TIMESTAMP WHERE "id" = ?')
+          .bind(email, anonRow.id)
+          .run();
+        row = await userBy('email', email);
+      } else {
+        const id = crypto.randomUUID();
+        await db
+          .prepare(
+            `INSERT INTO "x_lead_miner_user" ("id","email","subscriptionPlan","createdAt","updatedAt")
+             VALUES (?, ?, 'free', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+          )
+          .bind(id, email)
+          .run();
+        row = await userBy('email', email);
+      }
     }
+    if (!row) throw new Error(`user row missing after attach (${email})`);
     return { user: row, loggedIn: true, anonId };
   }
   const row = await ensureUser(anonId);
   return { user: row, loggedIn: false, anonId };
 }
-
-/** Compact post snapshot persisted inside a search run's results JSON. */
-export interface RecordedPost {
-  id: string;
-  handle: string;
-  name: string | undefined;
-  text: string;
-  score: number | null;
-  sec: number | null;
-  url: string;
-  createdAtIso: string | undefined;
-}
-
-const MAX_RUNS_PER_USER = 200;
 
 /** Persist one executed search behind the resolved user, bump usage counters
  *  and prune history beyond the per-user cap. Recording failures must never
@@ -123,36 +185,54 @@ export async function recordSearch(
   searchType: string,
   posts: RecordedPost[]
 ) {
-  const db = await getDb();
-  const run = await db.searchRun.create({
-    data: {
-      userId: user.id,
-      query,
-      searchType,
-      postCount: posts.length,
-      results: JSON.stringify(posts),
-    },
-  });
-  await db.user.update({
-    where: { id: user.id },
-    data: {
-      searchCount: { increment: 1 },
-      scoredCount: { increment: posts.length },
-      lastSearchAt: new Date(),
-    },
-  });
+  const db = await getD1();
+  const runId = crypto.randomUUID();
+  await db
+    .prepare(
+      `INSERT INTO "x_lead_miner_search" ("id","userId","query","searchType","postCount","results","createdAt")
+       VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+    )
+    .bind(runId, user.id, query, searchType, posts.length, JSON.stringify(posts))
+    .run();
+  await db
+    .prepare(
+      `UPDATE "x_lead_miner_user"
+       SET "searchCount" = "searchCount" + 1,
+           "scoredCount" = "scoredCount" + ?,
+           "lastSearchAt" = CURRENT_TIMESTAMP,
+           "updatedAt" = CURRENT_TIMESTAMP
+       WHERE "id" = ?`
+    )
+    .bind(posts.length, user.id)
+    .run();
 
   // Keep only the newest MAX_RUNS_PER_USER runs per user (D1 hygiene).
-  const stale = await db.searchRun.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: 'desc' },
-    skip: MAX_RUNS_PER_USER,
-    select: { id: true },
-  });
-  if (stale.length > 0) {
-    await db.searchRun.deleteMany({ where: { id: { in: stale.map((staleRun) => staleRun.id) } } });
-  }
-  return run;
+  await db
+    .prepare(
+      `DELETE FROM "x_lead_miner_search"
+       WHERE "userId" = ? AND "id" NOT IN (
+         SELECT "id" FROM "x_lead_miner_search" WHERE "userId" = ?
+         ORDER BY "createdAt" DESC LIMIT ${MAX_RUNS_PER_USER}
+       )`
+    )
+    .bind(user.id, user.id)
+    .run();
+  return { id: runId };
+}
+
+const MAX_RUNS_PER_USER = 200;
+
+/** All runs of a user, newest first (history page). */
+export async function listRuns(userId: string): Promise<RunRow[]> {
+  const db = await getD1();
+  const out = await db
+    .prepare(
+      `SELECT "id","userId","query","searchType","postCount","results","createdAt"
+       FROM "x_lead_miner_search" WHERE "userId" = ? ORDER BY "createdAt" DESC`
+    )
+    .bind(userId)
+    .all<RunRow>();
+  return out.results ?? [];
 }
 
 /** Merge async model scores back into a stored run's results JSON. The score
@@ -163,14 +243,17 @@ export async function mergeRunScores(
   runId: string,
   scores: { id: string; score: number; sec: number | null }[]
 ): Promise<boolean> {
-  const db = await getDb();
-  const run = await db.searchRun.findUnique({ where: { id: runId } });
-  if (!run || run.userId !== userId) return false;
+  const db = await getD1();
+  const row = await db
+    .prepare('SELECT "userId","results" FROM "x_lead_miner_search" WHERE "id" = ?')
+    .bind(runId)
+    .first<{ userId: string; results: string }>();
+  if (!row || row.userId !== userId) return false;
 
   const byId = new Map(scores.map((entry) => [entry.id, entry]));
   let posts: RecordedPost[] = [];
   try {
-    posts = JSON.parse(run.results) as RecordedPost[];
+    posts = JSON.parse(row.results) as RecordedPost[];
   } catch {
     return false;
   }
@@ -178,9 +261,9 @@ export async function mergeRunScores(
     const hit = byId.get(post.id);
     return hit ? { ...post, score: hit.score, sec: hit.sec } : post;
   });
-  await db.searchRun.update({
-    where: { id: run.id },
-    data: { results: JSON.stringify(merged) },
-  });
+  await db
+    .prepare('UPDATE "x_lead_miner_search" SET "results" = ? WHERE "id" = ?')
+    .bind(JSON.stringify(merged), runId)
+    .run();
   return true;
 }

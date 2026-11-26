@@ -1,8 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Card } from '@/components/ui/card';
 import { HistoryView, type HistoryRun } from '@/components/history-view';
-import { readUserIdentity } from '@/lib/user';
-import { getDb } from '@/lib/db';
+import { listRuns, readUserIdentity } from '@/lib/user';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,21 +39,24 @@ export default async function HistoryPage({
   let runs: HistoryRun[] = [];
   let usage = { searches: 0, scored: 0 };
   try {
-    const db = await getDb();
-    const user = await db.user.findUnique({
-      where: { id: identity.user.id },
-      include: { runs: { orderBy: { createdAt: 'desc' } } },
-    });
-    if (user) {
-      runs = user.runs.map((run) => ({
+    // sqlite datetimes are UTC without a zone suffix — tag them before Date().
+    const toIso = (value: string) => `${value.replace(' ', 'T')}Z`;
+    for (const run of await listRuns(identity.user.id)) {
+      let posts: HistoryRun['posts'] = [];
+      try {
+        posts = JSON.parse(run.results) as HistoryRun['posts'];
+      } catch {
+        continue;
+      }
+      runs.push({
         id: run.id,
         query: run.query,
         searchType: run.searchType,
-        capturedAtIso: run.createdAt.toISOString(),
-        posts: JSON.parse(run.results) as HistoryRun['posts'],
-      }));
-      usage = { searches: user.searchCount, scored: user.scoredCount };
+        capturedAtIso: toIso(run.createdAt),
+        posts,
+      });
     }
+    usage = { searches: identity.user.searchCount, scored: identity.user.scoredCount };
   } catch (error) {
     console.warn('[history] read failed:', error instanceof Error ? error.message : error);
   }
