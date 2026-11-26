@@ -127,9 +127,9 @@
   },
   "nav": {
     "search": "线索搜索",
-    "intent": "意图实验室",
     "billing": "账单",
-    "history": "历史记录"
+    "history": "历史记录",
+    "mcp": "MCP"
   },
   "themeToggle": {
     "label": "切换明暗主题"
@@ -202,41 +202,15 @@
     "colScore": "评分",
     "colTime": "抓取时间",
     "sortTitle": "切换评分排序方向",
-    "openOnX": "在 X 上打开"
-  },
-  "intent": {
-    "title": "意图实验室",
-    "subtitle": "线索打分背后的 PyTorch 模型：冻结句向量 + 一个小分类头。管线代码在 intent/ 目录。",
-    "collect": {
-      "title": "采集",
-      "detail": "从 X API 拉取意向桶和噪音桶，按推文 id 去重。",
-      "command": "python3 intent/collect.py"
-    },
-    "label": {
-      "title": "标注（LLM 老师）",
-      "detail": "MuleRun LLM 标注购买意向；训练前先人工抽查一批。",
-      "command": "python3 intent/label.py --limit 50"
-    },
-    "train": {
-      "title": "训练分类头",
-      "detail": "冻结句向量（默认 embeddinggemma-2，2026-10）→ MLP dim-64-1 → holdout 上的 precision@k。",
-      "command": "python3 intent/train.py"
-    },
-    "serve": {
-      "title": "推理服务",
-      "detail": "FastAPI 跑在 127.0.0.1:5019；配置后线索搜索会逐页调用打分。",
-      "command": "python3 intent/serve.py"
-    },
-    "notStarted": "未开始",
-    "posts": "{n} 条帖子",
-    "labeled": "已标注 {n} 条",
-    "trained": "已训练",
-    "sidecarUp": "sidecar 在线",
-    "sidecarDown": "sidecar 离线",
-    "sidecarUnset": "未配置 INTENT_SERVICE_URL",
-    "metricsTitle": "最新训练指标",
-    "quickStart": "快速开始",
-    "readmeNote": "完整说明与数据卫生注意事项：intent/README.md"
+    "openOnX": "在 X 上打开",
+    "deleteLabel": "删除该词及其历史数据",
+    "deleteTitle": "删除这个搜索词？",
+    "deleteBody": "将永久删除「{query}」——{runs} 次搜索与 {posts} 条已获取的推文数据，操作不可撤销。",
+    "deleteCountersNote": "已搜索 / 已打分的累计统计不会减少，仍保留为记录。",
+    "deleteGo": "删除",
+    "deleteKeep": "取消",
+    "deleting": "删除中…",
+    "deleteFailed": "删除失败，请重试。"
   },
   "billing": {
     "title": "账单",
@@ -253,5 +227,19 @@
     "google": "使用 Google 继续",
     "dismiss": "暂不登录，先看看已有数据",
     "unconfigured": "登录暂未配置（缺少 OAuth 凭据）——网站可以继续浏览，但挖掘暂停。"
+  },
+  "mcp": {
+    "title": "MCP",
+    "plannedBadge": "规划中",
+    "subtitle": "Model Context Protocol —— 在你常用的 AI 客户端（Claude Desktop、Cursor 等）里直接使用 X Lead Miner。服务端正在设计，本页先搭好骨架。",
+    "toolsTitle": "规划中的工具",
+    "toolSearch": "线索搜索",
+    "toolSearchDesc": "按意图短语搜索 X，返回带评分的线索。",
+    "toolHistory": "查询历史",
+    "toolHistoryDesc": "读取已记录的搜索、推文与评分。",
+    "toolScore": "文本打分",
+    "toolScoreDesc": "用冻结句向量 + 分类头给任意文本打购买意向分。",
+    "noteTitle": "技术实现",
+    "noteBody": "MCP server（传输、鉴权、工具 schema）尚未开发——本页目前只是骨架，进展见仓库。"
   }
 }

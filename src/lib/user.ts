@@ -222,6 +222,19 @@ export async function recordSearch(
 
 const MAX_RUNS_PER_USER = 200;
 
+/** Delete every run of one search term. Usage counters (searchCount /
+ *  scoredCount) are deliberately NOT touched — they stay as lifetime records
+ *  even after the term's history is gone. Returns the number of runs removed. */
+export async function deleteRunsByQuery(userId: string, query: string): Promise<number> {
+  const db = await getD1();
+  const result = await db
+    .prepare('DELETE FROM "x_lead_miner_search" WHERE "userId" = ? AND "query" = ?')
+    .bind(userId, query)
+    .run();
+  const meta = (result as { meta?: { changes?: number } }).meta;
+  return meta?.changes ?? 0;
+}
+
 /** All runs of a user, newest first (history page). */
 export async function listRuns(userId: string): Promise<RunRow[]> {
   const db = await getD1();

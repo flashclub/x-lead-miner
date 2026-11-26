@@ -127,9 +127,9 @@
   },
   "nav": {
     "search": "Lead search",
-    "intent": "Intent lab",
     "billing": "Billing",
-    "history": "History"
+    "history": "History",
+    "mcp": "MCP"
   },
   "themeToggle": {
     "label": "Toggle color theme"
@@ -202,41 +202,15 @@
     "colScore": "Score",
     "colTime": "Captured",
     "sortTitle": "Toggle score sort order",
-    "openOnX": "Open on X"
-  },
-  "intent": {
-    "title": "Intent lab",
-    "subtitle": "The PyTorch model behind lead scoring: frozen sentence embeddings + a small trained head. Pipeline lives in intent/.",
-    "collect": {
-      "title": "Collect",
-      "detail": "Intent + noise buckets from the X API, deduped by tweet id.",
-      "command": "python3 intent/collect.py"
-    },
-    "label": {
-      "title": "Label (LLM teacher)",
-      "detail": "MuleRun LLM labels buying intent; hand-check a sample before training.",
-      "command": "python3 intent/label.py --limit 50"
-    },
-    "train": {
-      "title": "Train head",
-      "detail": "Frozen sentence embedder (default: embeddinggemma-2, 2026-10) → MLP dim-64-1 → precision@k on holdout.",
-      "command": "python3 intent/train.py"
-    },
-    "serve": {
-      "title": "Serve scores",
-      "detail": "FastAPI on 127.0.0.1:5019; lead search calls it per page when configured.",
-      "command": "python3 intent/serve.py"
-    },
-    "notStarted": "not started",
-    "posts": "{n} posts",
-    "labeled": "{n} labeled",
-    "trained": "trained",
-    "sidecarUp": "sidecar up",
-    "sidecarDown": "sidecar down",
-    "sidecarUnset": "INTENT_SERVICE_URL unset",
-    "metricsTitle": "Latest training metrics",
-    "quickStart": "Quick start",
-    "readmeNote": "Full story and data-hygiene notes: intent/README.md"
+    "openOnX": "Open on X",
+    "deleteLabel": "Delete this term and its history",
+    "deleteTitle": "Delete this search term?",
+    "deleteBody": "This permanently removes “{query}” — {runs} search(es) and {posts} captured posts. This cannot be undone.",
+    "deleteCountersNote": "Your lifetime counters (searches, posts scored) stay as records — they will not decrease.",
+    "deleteGo": "Delete",
+    "deleteKeep": "Cancel",
+    "deleting": "Deleting…",
+    "deleteFailed": "Delete failed — try again."
   },
   "billing": {
     "title": "Billing",
@@ -253,5 +227,19 @@
     "google": "Continue with Google",
     "dismiss": "Not now — just view my data",
     "unconfigured": "Sign-in is not configured yet (missing OAuth credentials) — the site keeps working, but mining stays paused."
+  },
+  "mcp": {
+    "title": "MCP",
+    "plannedBadge": "Planned",
+    "subtitle": "Model Context Protocol — use X Lead Miner from the AI clients you already work in (Claude Desktop, Cursor, …). The server is being designed; this page is the scaffold.",
+    "toolsTitle": "Planned tools",
+    "toolSearch": "Search leads",
+    "toolSearchDesc": "Run intent-phrase searches against X and return scored leads.",
+    "toolHistory": "Query history",
+    "toolHistoryDesc": "Read your recorded searches, posts and scores.",
+    "toolScore": "Score text",
+    "toolScoreDesc": "Score any text for buying intent with the frozen embedder + head.",
+    "noteTitle": "Implementation",
+    "noteBody": "The MCP server (transport, auth, tool schemas) is not built yet — this page is the scaffold. Progress lives in the repo."
   }
 }

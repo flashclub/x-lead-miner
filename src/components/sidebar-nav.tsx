@@ -7,7 +7,7 @@ import { signOutAction } from '@/app/actions';
 const NAV_ITEMS = [
   { href: '/dashboard', labelKey: 'search' },
   { href: '/history', labelKey: 'history' },
-  { href: '/intent', labelKey: 'intent' },
+  { href: '/mcp', labelKey: 'mcp' },
 ] as const;
 
 /**

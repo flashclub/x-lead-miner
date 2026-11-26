@@ -52,7 +52,7 @@ export default async function DashboardLayout({
       </aside>
 
       <main className="min-w-0 flex-1">
-        <div className="mx-auto max-w-4xl px-6 py-8">{children}</div>
+        <div className="w-full px-6 py-8">{children}</div>
       </main>
     </div>
   );
