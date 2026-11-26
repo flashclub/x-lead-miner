@@ -1,12 +1,25 @@
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
+import { ANON_COOKIE, ANON_COOKIE_MAX_AGE } from '@/lib/anon-cookie';
 
-// Pure i18n routing — the demo site has no auth: every page and API route
-// is public (search is IP-rate-limited at the route level).
+// i18n routing plus one concern: handing every browser an anonymous id cookie.
+// The site has no login; the DB user row is keyed by this id (see
+// src/lib/user.ts) and powers usage counters and the history page. API routes
+// are excluded from the matcher — they read the cookie the page load set, and
+// generate their own when called directly.
 const handleI18nRouting = createMiddleware(routing);
 
 export default function middleware(request: Parameters<typeof handleI18nRouting>[0]) {
-  return handleI18nRouting(request);
+  const response = handleI18nRouting(request);
+  if (!request.cookies.get(ANON_COOKIE)?.value) {
+    response.cookies.set(ANON_COOKIE, crypto.randomUUID(), {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: ANON_COOKIE_MAX_AGE,
+    });
+  }
+  return response;
 }
 
 export const config = {

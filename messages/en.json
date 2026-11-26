@@ -125,9 +125,9 @@
   },
   "nav": {
     "search": "Lead search",
-    "chat": "Chat",
     "intent": "Intent lab",
-    "billing": "Billing"
+    "billing": "Billing",
+    "history": "History"
   },
   "themeToggle": {
     "label": "Toggle color theme"
@@ -159,19 +159,17 @@
     "scoringInProgress": "scoring…",
     "scoreTimeTitle": "per-post scoring latency (seconds, 4 decimals)"
   },
-  "chat": {
-    "title": "Chat",
-    "subtitle": "Ask the lead-mining assistant — it knows X search operators and buying-intent signals. Paste a post to get a read on it.",
-    "emptyHint": "Ask about search queries, intent signals, or paste a post to analyze.",
-    "starter1": "Write an X search query to find people asking for alternatives to HubSpot.",
-    "starter2": "What buying-intent signals should I watch for when mining SaaS leads?",
-    "starter3": "Score this post for buying intent: “ugh our helpdesk is so slow, might just switch”",
-    "placeholder": "Message the assistant… (Enter to send, Shift+Enter for a new line)",
-    "send": "Send",
-    "clear": "Clear",
-    "thinking": "thinking…",
-    "failedPrefix": "Chat failed:",
-    "requestFailed": "Chat request failed — is the dev server running?"
+  "history": {
+    "title": "History",
+    "subtitle": "Your past searches grouped by search term — scores come from the intent model.",
+    "empty": "No searches yet — run a search and it will show up here.",
+    "usage": "{searches} searches · {posts} posts scored",
+    "tabEmpty": "No posts recorded for this term yet.",
+    "colPost": "Post",
+    "colScore": "Score",
+    "colTime": "Captured",
+    "sortTitle": "Toggle score sort order",
+    "openOnX": "Open on X"
   },
   "intent": {
     "title": "Intent lab",

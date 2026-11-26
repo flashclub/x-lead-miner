@@ -20,8 +20,8 @@ NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=
 # `Authorization: Bearer` header. Verified contract: docs/x-api.md
 AIAPIKEY_KEY=
 
-# MuleRun LLM gateway (https://api.mulerun.com) — powers /api/chat and the
-# intent-model labeling teacher (intent/label.py). OpenAI-compatible.
+# MuleRun LLM gateway (https://api.mulerun.com) — intent-model labeling
+# teacher (intent/label.py, offline pipeline). OpenAI-compatible.
 MULERUN_API_KEY=
 MULERUN_LLM_MODEL=gemini-2.5-flash
 

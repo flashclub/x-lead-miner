@@ -38,3 +38,6 @@ docs/rag-langchain-scenarios.md
 .v2c/
 .video_agent/
 .zcode/
+
+# local dev database (plain next dev fallback)
+prisma/dev.db

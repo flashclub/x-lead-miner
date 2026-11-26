@@ -126,7 +126,7 @@ Environment variables (all optional — features degrade gracefully):
 | --- | --- |
 | `AIAPIKEY_KEY` | live X search |
 | `INTENT_SERVICE_URL` | per-post intent scoring |
-| `MULERUN_API_KEY` | chat assistant + labeling |
+| `MULERUN_API_KEY` | intent-model labeling (offline pipeline) |
 
 ## Deploy (GitHub Actions, free)
 

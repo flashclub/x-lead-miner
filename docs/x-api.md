@@ -47,6 +47,11 @@
 
 ### 已知坑
 
+- **整页作者被清空 / 整页为空（实测 2026-11-25，事故级）**：上游间歇性返回两种坏页——
+  ① `author` 全空的推文页（`screenName`/`name` 空串、`followers` 0、`url` 退化为
+  `x.com/i/status/…`），② 直接 `tweets: []` 的空页。与查询词无关，劣化期约一半页面中招、
+  重取也可能再中。`search()` 最多尝试 3 页、保留作者最全的一页（每页都花 credits，事故期
+  一次搜索最多 720 credits；真正无结果的查询也会跑满 3 次）。UI 侧对空 handle 做隐藏降级。
 - **单条推文端点的 author 是 best-effort**：实测 `author.followers = 0`、`avatar = ""`，
   与 search 结果里的真实值不一致。产品只依赖 search 的作者字段。
 - **上游没有**（旧服务有，归一化接口里恒为 `undefined`）：推文级作者 `rest_id`、

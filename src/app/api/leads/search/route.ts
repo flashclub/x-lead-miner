@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerVar } from '@/lib/server-env';
-import { XApiClient, XApiError, type XApiErrorKind } from '@/lib/x-api';
+import { XApiClient, XApiError, type XApiErrorKind, type XPost } from '@/lib/x-api';
+import {
+  ANON_COOKIE,
+  ANON_COOKIE_MAX_AGE,
+  anonIdFrom,
+  recordSearch,
+  type RecordedPost,
+} from '@/lib/user';
 
 const searchParamsSchema = z.object({
   query: z.string().min(1, 'query is required').max(500, 'query too long (max 500 chars)'),
@@ -29,6 +36,21 @@ function rateLimited(ip: string): boolean {
   }
   entry.count += 1;
   return entry.count > RATE_LIMIT;
+}
+
+/** Compact snapshot stored with a search run. Scores are NOT known here —
+ *  they stream in asynchronously and are merged via /api/history/scores. */
+function serializePost(post: XPost): RecordedPost {
+  return {
+    id: post.id,
+    handle: post.author.handle,
+    name: post.author.name,
+    text: post.text.replace(/\s+/g, ' ').slice(0, 400),
+    score: null,
+    sec: null,
+    url: post.url,
+    createdAtIso: post.createdAtIso,
+  };
 }
 
 export async function GET(request: Request) {
@@ -65,9 +87,48 @@ export async function GET(request: Request) {
       searchType: parsed.data.searchType,
       cursor: parsed.data.cursor,
     });
+    if (page.posts.length === 0) {
+      return NextResponse.json({ posts: [], nextCursor: page.nextCursor, prevCursor: page.prevCursor });
+    }
+
+    // History: mirror the run behind the anon cookie id (see src/lib/user.ts).
+    // Recording must never break the search response, and the model scores are
+    // NOT known yet — they stream in after this returns and get merged into the
+    // stored run via /api/history/scores (the client reports them with runId).
+    const anonId = anonIdFrom(request);
+    let runId: string | undefined;
+    try {
+      const run = await recordSearch(
+        anonId,
+        parsed.data.query,
+        parsed.data.searchType,
+        page.posts.map(serializePost)
+      );
+      runId = run.id;
+    } catch (error) {
+      console.warn(
+        '[search] history recording failed:',
+        error instanceof Error ? error.message : error
+      );
+    }
+
     // Intent scoring is async — results render immediately, then the client
     // scores each batch via /api/leads/score (see lead-search.tsx).
-    return NextResponse.json({ posts: page.posts, nextCursor: page.nextCursor, prevCursor: page.prevCursor });
+    const response = NextResponse.json({
+      posts: page.posts,
+      nextCursor: page.nextCursor,
+      prevCursor: page.prevCursor,
+      runId,
+    });
+    // First direct-API hit (no page load set the cookie): hand back the id this
+    // run was recorded under so later requests attribute to the same user.
+    response.cookies.set(ANON_COOKIE, anonId, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: ANON_COOKIE_MAX_AGE,
+    });
+    return response;
   } catch (error) {
     if (error instanceof XApiError) {
       const messages: Record<XApiErrorKind, string> = {

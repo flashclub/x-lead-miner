@@ -10,31 +10,52 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Application user. Created on first OAuth sign-in (see auth.ts signIn callback).
-///
-/// Single-table design: this row also carries the Stripe billing columns that
-/// were previously a separate StripeCustomer table. They are NULL until the
-/// user completes their first checkout, at which point the webhook fills them in.
-///
-/// Physical table name is `x_lead_miner_user` via @@map below, keeping the
-/// baseline user table isolated from other apps that share the same D1
-/// database. Business tables follow the same `<app>_<table>` prefix.
+/// Application user — identity, usage counters and subscription status in one
+/// table (by design, keep the table count low). Anonymous visitors get a row
+/// keyed by a cookie id; email/stripe columns stay NULL until a real account /
+/// checkout exists (see migration 0002).
 model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  name              String?
-  image             String?
-  emailVerified     DateTime?
-  /// Stripe customer id. NULL until the first successful checkout. Unique so the
-  /// webhook can upsert by it idempotently.
-  stripeCustomerId  String?   @unique
-  /// "free" | "pro". Default "free" until checkout. Kept in sync by the webhook.
-  subscriptionPlan  String?
-  /// "active" | "trialing" | "past_due" | "canceled" | "incomplete".
+  id                 String    @id @default(cuid())
+  /// Cookie id for anonymous visitors (set by middleware). Unique; a future
+  /// OAuth login attaches itself to this row instead of creating a new one.
+  anonId             String?   @unique
+  email              String?   @unique
+  name               String?
+  image              String?
+  /// Usage: incremented by /api/leads/search on every recorded search.
+  searchCount        Int       @default(0)
+  scoredCount        Int       @default(0)
+  lastSearchAt       DateTime?
+  /// "free" | "pro". Stripe columns stay NULL until the first checkout; the
+  /// webhook keeps them in sync once billing exists.
+  subscriptionPlan   String    @default("free")
   subscriptionStatus String?
-  currentPeriodEnd  DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  currentPeriodEnd   DateTime?
+  stripeCustomerId   String?   @unique
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  runs               SearchRun[]
 
   @@map("x_lead_miner_user")
+}
+
+/// One executed search (query + result posts as JSON) — the row behind the
+/// history page. Kept as JSON on purpose: the product stays at two tables and
+/// a run is only ever read whole.
+model SearchRun {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query      String
+  searchType String   @default("Latest")
+  postCount  Int      @default(0)
+  /// JSON array: [{ id, handle, name, text, score, sec, url, createdAtIso }]
+  results    String
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, query])
+
+  @@map("x_lead_miner_search")
 }

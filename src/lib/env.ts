@@ -19,7 +19,8 @@ const serverEnvSchema = z.object({
   // AI API Key X data key (aiapikey.ai) — optional so auth/stripe-only flows
   // work without it; the XApiClient checks presence at call time.
   AIAPIKEY_KEY: z.string().optional(),
-  // MuleRun LLM gateway (chat assistant + intent-model labeling teacher).
+  // MuleRun LLM gateway — intent-model labeling teacher (intent/label.py,
+  // offline pipeline; the site itself no longer calls any LLM).
   MULERUN_API_KEY: z.string().optional(),
   MULERUN_LLM_MODEL: z.string().optional(),
   // Local PyTorch intent sidecar (intent/serve.py); unset = scores omitted.

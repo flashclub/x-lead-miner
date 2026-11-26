@@ -125,9 +125,9 @@
   },
   "nav": {
     "search": "线索搜索",
-    "chat": "聊天",
     "intent": "意图实验室",
-    "billing": "账单"
+    "billing": "账单",
+    "history": "历史记录"
   },
   "themeToggle": {
     "label": "切换明暗主题"
@@ -159,19 +159,17 @@
     "scoringInProgress": "模型打分中…",
     "scoreTimeTitle": "单条打分耗时（秒，精确到小数点后 4 位）"
   },
-  "chat": {
-    "title": "聊天",
-    "subtitle": "向线索挖掘助手提问——它懂 X 搜索操作符和购买意向信号。可以粘贴一条帖子让它分析。",
-    "emptyHint": "问搜索语句、意向信号，或粘贴一条帖子来分析。",
-    "starter1": "帮我写一条 X 搜索语句，找想把 HubSpot 换掉的人。",
-    "starter2": "挖掘 SaaS 线索时，应该盯哪些购买意向信号？",
-    "starter3": "给这条帖子评估购买意向：「我们的客服系统太慢了，可能要换一个」",
-    "placeholder": "给助手发消息…（Enter 发送，Shift+Enter 换行）",
-    "send": "发送",
-    "clear": "清空",
-    "thinking": "思考中…",
-    "failedPrefix": "发送失败：",
-    "requestFailed": "聊天请求失败——dev server 在跑吗？"
+  "history": {
+    "title": "历史记录",
+    "subtitle": "按搜索词分组的过往搜索——评分来自意向模型。",
+    "empty": "还没有搜索记录——去搜索一次，结果会出现在这里。",
+    "usage": "已搜索 {searches} 次 · 已打分 {posts} 条",
+    "tabEmpty": "该搜索词暂无已记录的推文。",
+    "colPost": "推文",
+    "colScore": "评分",
+    "colTime": "抓取时间",
+    "sortTitle": "切换评分排序方向",
+    "openOnX": "在 X 上打开"
   },
   "intent": {
     "title": "意图实验室",

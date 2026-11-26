@@ -33,6 +33,23 @@ function timeAgo(iso: string | undefined, t: TimeAgoT): string {
   return t('daysAgo', { n: Math.floor(seconds / 86_400) });
 }
 
+/** Report async model scores back to the stored history run (fire-and-forget
+ *  — history is secondary and must never surface as a search error). */
+function reportScores(runId: string, batch: XPost[], scores: number[], timesSec?: number[]) {
+  void fetch('/api/history/scores', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      runId,
+      scores: batch.map((post, index) => ({
+        id: post.id,
+        score: scores[index],
+        sec: timesSec?.[index] ?? null,
+      })),
+    }),
+  }).catch(() => {});
+}
+
 export function LeadSearch() {
   const t = useTranslations('leadSearch');
   const [query, setQuery] = useState(EXAMPLE_QUERIES[0]);
@@ -64,6 +81,7 @@ export function LeadSearch() {
         scores?: number[];
         timesSec?: number[];
         elapsedSec?: number;
+        runId?: string;
       };
       if (searchSeqRef.current !== seq) return; // a newer search superseded this batch
       if (!Array.isArray(data.scores) || data.scores.length !== batch.length) return;
@@ -82,6 +100,10 @@ export function LeadSearch() {
             : post;
         })
       );
+      // History: merge the model scores into the stored run (see /history).
+      if (typeof data.runId === 'string') {
+        reportScores(data.runId, batch, data.scores, data.timesSec);
+      }
       if (typeof data.elapsedSec === 'number') {
         setScoringSec(data.elapsedSec.toFixed(4));
       }
@@ -198,14 +220,16 @@ export function LeadSearch() {
             <Card key={post.id} className="p-5">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 {post.author.name && <span className="font-medium">{post.author.name}</span>}
-                <a
-                  href={`https://x.com/${post.author.handle}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-mono text-sm text-text-muted hover:text-text"
-                >
-                  @{post.author.handle}
-                </a>
+                {post.author.handle && (
+                  <a
+                    href={`https://x.com/${post.author.handle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-sm text-text-muted hover:text-text"
+                  >
+                    @{post.author.handle}
+                  </a>
+                )}
                 {post.author.verified && (
                   <span aria-label={t('verified')} className="font-mono text-sm text-accent">
                     ✓

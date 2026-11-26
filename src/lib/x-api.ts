@@ -14,6 +14,8 @@ import { z } from 'zod';
  *   - The single-tweet endpoint can return `author.followers = 0` and
  *     `author.avatar = ""` even when search shows real values; tweet-level
  *     author fields are best-effort.
+ *   - Search occasionally serves WHOLE pages with zeroed-out authors (empty
+ *     handle/name, followers 0) — `search()` refetches such a page once.
  *   - Upstream has no per-tweet `rest_id` / `conversation_id`, and no
  *     profile `location` / `statusesCount` / `isProtected` — the shared
  *     interfaces keep those slots and they stay undefined.
@@ -23,6 +25,9 @@ import { z } from 'zod';
 
 const BASE_URL = 'https://aiapikey.ai';
 const REQUEST_TIMEOUT_MS = 30_000;
+/** Whole-page stripped-author responses are bursty upstream; see search(). */
+const SEARCH_ATTEMPTS = 3;
+const SEARCH_RETRY_PAUSE_MS = 800;
 
 export type SearchType = 'Top' | 'Latest' | 'Media' | 'People' | 'Lists';
 
@@ -174,6 +179,11 @@ function postUrl(handle: string | undefined, id: string): string {
   return `https://x.com/${handle ?? 'i'}/status/${id}`;
 }
 
+/** How many tweets on the page carry a real author handle (see search()). */
+function authorsWithHandle(tweets: Array<z.infer<typeof tweetSchema>>): number {
+  return tweets.filter((tweet) => tweet.author?.screenName).length;
+}
+
 function toPost(tweet: z.infer<typeof tweetSchema>): XPost {
   return {
     id: tweet.id,
@@ -221,18 +231,38 @@ export class XApiClient {
   }
 
   /** Search public posts. X advanced operators (phrases, lang:, -filter:,
-   *  since:/until:, min_faves:) pass through — verified 2026-11-25. */
+   *  since:/until:, min_faves:) pass through — verified 2026-11-25.
+   *
+   *  Upstream intermittently serves WHOLE pages with the author object zeroed
+   *  out (screenName/name '', followers 0, url downgraded to x.com/i/status/…)
+   *  — bursty on their side, ~50% of pages during an incident (measured
+   *  2026-11-25). Attempts up to SEARCH_ATTEMPTS pages and keeps the one with
+   *  the most real authors; returns whatever it has if every attempt is hit. */
   async search(query: string, options: SearchOptions = {}): Promise<SearchPage> {
-    const data = await this.request('v1/x/search', {
+    const params = {
       query,
       searchType: options.searchType ?? 'Latest',
       cursor: options.cursor ?? '',
-    }, searchResponseSchema);
+    };
+    let best: z.infer<typeof searchResponseSchema> | undefined;
+    for (let attempt = 1; attempt <= SEARCH_ATTEMPTS; attempt += 1) {
+      const data = await this.request('v1/x/search', params, searchResponseSchema);
+      if (!best || authorsWithHandle(data.tweets) > authorsWithHandle(best.tweets)) {
+        best = data;
+      }
+      // stop only on a page with real authors; stripped AND empty pages are both
+      // upstream failure modes, so they retry (a legit empty query costs the
+      // full attempt budget — rare for this product's phrase queries)
+      if (authorsWithHandle(best.tweets) > 0) break;
+      if (attempt < SEARCH_ATTEMPTS) {
+        await new Promise((resolve) => setTimeout(resolve, SEARCH_RETRY_PAUSE_MS));
+      }
+    }
 
     return {
-      posts: data.tweets.map(toPost),
-      nextCursor: data.nextCursor,
-      prevCursor: data.previousCursor,
+      posts: (best?.tweets ?? []).map(toPost),
+      nextCursor: best?.nextCursor,
+      prevCursor: best?.previousCursor,
     };
   }
 

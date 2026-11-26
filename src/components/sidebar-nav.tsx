@@ -5,7 +5,7 @@ import { Link, usePathname } from '@/i18n/navigation';
 
 const NAV_ITEMS = [
   { href: '/dashboard', labelKey: 'search' },
-  { href: '/chat', labelKey: 'chat' },
+  { href: '/history', labelKey: 'history' },
   { href: '/intent', labelKey: 'intent' },
 ] as const;
 

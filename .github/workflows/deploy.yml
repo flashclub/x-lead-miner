@@ -52,23 +52,25 @@ jobs:
         env:
           AIAPIKEY_KEY: ${{ secrets.AIAPIKEY_KEY }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          MULERUN_API_KEY: ${{ secrets.MULERUN_API_KEY }}
           NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: price_demo_placeholder
           NEXT_PUBLIC_APP_URL: https://x-lead-miner.ideaguard.dev
           NODE_OPTIONS: --max-old-space-size=6144
         run: pnpm exec opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion
       - name: Install wrangler v4 (new asset upload API)
         run: npm install -g wrangler@4
-      - name: Worker runtime secrets (XDATA / MULERUN / AUTH)
+      - name: Apply D1 migrations (remote)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler d1 execute saas --remote --file=migrations/0002_history.sql
+      - name: Worker runtime secrets (XDATA / AUTH)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           AIAPIKEY_KEY: ${{ secrets.AIAPIKEY_KEY }}
-          MULERUN_API_KEY: ${{ secrets.MULERUN_API_KEY }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: |
           echo "$AIAPIKEY_KEY" | pnpm exec wrangler secret put AIAPIKEY_KEY
-          echo "$MULERUN_API_KEY" | pnpm exec wrangler secret put MULERUN_API_KEY
           echo "$AUTH_SECRET" | pnpm exec wrangler secret put AUTH_SECRET
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3

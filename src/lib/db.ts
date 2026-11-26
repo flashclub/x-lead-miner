@@ -10,10 +10,18 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
  * (stateless isolates; long-lived clients cause "memory access out of bounds").
  * React's cache() gives us one client per request, recreated across requests.
  *
- * In `next dev` (Node), getCloudflareContext is shimmed by opennext preview.
+ * In plain `next dev` (Node) there is no Workers binding at all — fall back to
+ * the sqlite file the Prisma CLI maintains (DATABASE_URL, prisma/dev.db, see
+ * migrations/0002_history.sql). Same SQL, so both runtimes stay in sync.
  */
-export const getDb = cache(async () => {
-  const { env } = await getCloudflareContext({ async: true });
-  const adapter = new PrismaD1(env.DB);
-  return new PrismaClient({ adapter });
+export const getDb = cache(async (): Promise<PrismaClient> => {
+  try {
+    const { env } = await getCloudflareContext({ async: true });
+    if (env.DB) {
+      return new PrismaClient({ adapter: new PrismaD1(env.DB) });
+    }
+  } catch {
+    // No Workers context — plain `next dev`, use the local sqlite file below.
+  }
+  return new PrismaClient();
 });
