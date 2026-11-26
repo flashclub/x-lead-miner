@@ -57,7 +57,7 @@ export function LoginRequiredModal({
             )}
           </div>
         ) : (
-          <p className="mt-5 rounded-md bg-surface-2 px-3 py-2 text-xs leading-relaxed text-text-muted">
+          <p className="mt-5 rounded-md bg-surface-2 px-3 py-2 text-sm leading-relaxed text-text-muted">
             {t('unconfigured')}
           </p>
         )}
@@ -65,7 +65,7 @@ export function LoginRequiredModal({
         <button
           type="button"
           onClick={onClose}
-          className="mt-4 w-full text-center text-xs text-text-subtle transition-colors hover:text-text"
+          className="mt-4 w-full text-center text-sm text-text-subtle transition-colors hover:text-text"
         >
           {t('dismiss')}
         </button>

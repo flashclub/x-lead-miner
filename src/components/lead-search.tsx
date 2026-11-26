@@ -204,10 +204,10 @@ export function LeadSearch({
             <h2 className="font-display text-sm font-semibold">{t('withProductTitle')}</h2>
             <Badge className="border-accent text-accent">{t('comingSoonBadge')}</Badge>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-text-muted">{t('withProductHint')}</p>
+          <p className="mt-2 text-sm leading-relaxed text-text-muted">{t('withProductHint')}</p>
           <label
             htmlFor="product-url"
-            className="mt-3 block text-xs font-medium text-text-subtle"
+            className="mt-3 block text-sm font-medium text-text-subtle"
           >
             {t('productUrlLabel')}
           </label>
@@ -233,7 +233,7 @@ export function LeadSearch({
               {loading ? t('searching') : t('search')}
             </Button>
             {showProductHint && (
-              <p className="mt-2 text-xs leading-relaxed text-text-subtle">
+              <p className="mt-2 text-sm leading-relaxed text-text-subtle">
                 {t('comingSoonHint')}
               </p>
             )}
@@ -247,7 +247,7 @@ export function LeadSearch({
             <button
               type="button"
               onClick={() => setAdvanced((current) => !current)}
-              className="text-xs text-text-subtle transition-colors hover:text-text"
+              className="text-sm text-text-subtle transition-colors hover:text-text"
             >
               {advanced ? t('standardMode') : t('advancedMode')}
             </button>
@@ -358,7 +358,7 @@ export function LeadSearch({
                     {post.intentScoreSec !== undefined && (
                       <span
                         title={t('scoreTimeTitle')}
-                        className="font-mono text-xs text-text-subtle"
+                        className="font-mono text-sm text-text-subtle"
                       >
                         {post.intentScoreSec.toFixed(4)}s
                       </span>

@@ -207,7 +207,7 @@
     "tabEmpty": "该搜索词暂无已记录的推文。",
     "colPost": "推文",
     "colScore": "评分",
-    "colTime": "抓取时间",
+    "colTime": "帖子时间",
     "sortTitle": "切换评分排序方向",
     "openOnX": "在 X 上打开",
     "deleteLabel": "删除该词及其历史数据",
@@ -217,7 +217,10 @@
     "deleteGo": "删除",
     "deleteKeep": "取消",
     "deleting": "删除中…",
-    "deleteFailed": "删除失败，请重试。"
+    "deleteFailed": "删除失败，请重试。",
+    "sortTimeTitle": "切换帖子时间排序方向",
+    "backfillStatus": "正在补算 {n} 条历史评分…",
+    "backfillFailed": "部分历史评分补算失败——刷新页面可重试。"
   },
   "billing": {
     "title": "账单",

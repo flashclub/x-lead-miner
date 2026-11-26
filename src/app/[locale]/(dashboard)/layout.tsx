@@ -54,7 +54,7 @@ export default async function DashboardLayout({
           </div>
           {email ? (
             <div className="flex min-w-0 items-center gap-2">
-              <span className="max-w-[104px] truncate font-mono text-[11px] text-text-subtle" title={email}>
+              <span className="max-w-[104px] truncate font-mono text-xs text-text-subtle" title={email}>
                 {email}
               </span>
               <form action={signOutAction}>

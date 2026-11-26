@@ -57,7 +57,7 @@ export function SearchComposer({
   const [customPhrase, setCustomPhrase] = useState('');
   const [topic, setTopic] = useState('');
   const [langEn, setLangEn] = useState(true);
-  const [excludeReplies, setExcludeReplies] = useState(true);
+  const [excludeReplies, setExcludeReplies] = useState(false);
   const [timeframe, setTimeframe] = useState<Timeframe>('any');
   /** The literal since: date, set only in event handlers — Date.now() must
    *  never run during render (react-hooks/purity / hydration mismatch). */
@@ -120,7 +120,7 @@ export function SearchComposer({
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* intent phrase chips — the "formula" becomes a single click */}
       <div>
-        <p className="mb-1.5 text-xs font-medium text-text-subtle">{t('phraseLabel')}</p>
+        <p className="mb-1.5 text-sm font-medium text-text-subtle">{t('phraseLabel')}</p>
         <div className="flex flex-wrap gap-2">
           {phraseOptions.map(({ key, label }) => {
             const active = phraseKey === key;
@@ -169,7 +169,7 @@ export function SearchComposer({
 
       {/* optional topic keyword */}
       <div>
-        <label htmlFor="composer-topic" className="mb-1.5 block text-xs font-medium text-text-subtle">
+        <label htmlFor="composer-topic" className="mb-1.5 block text-sm font-medium text-text-subtle">
           {t('topicLabel')}
         </label>
         <input
@@ -234,7 +234,7 @@ export function SearchComposer({
         <Button type="submit" disabled={disabled}>
           {disabled ? t('searching') : t('search')}
         </Button>
-        <p className="min-w-0 flex-1 truncate font-mono text-xs text-text-subtle" title={preview}>
+        <p className="min-w-0 flex-1 truncate font-mono text-sm text-text-subtle" title={preview}>
           {t('previewLabel')}: {preview}
         </p>
       </div>

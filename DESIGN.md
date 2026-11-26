@@ -45,6 +45,13 @@ Geist Mono (numbers/code), loaded via `next/font` in `src/app/layout.tsx`
 (`font-sans`, `font-display`, `font-mono`). Deliberately not Poppins or
 Montserrat.
 
+## Type sizes
+
+14px (`text-sm`) is the default for anything a user reads — body copy, labels,
+handles, dates, hints. 12px (`text-xs`) is the floor and is reserved for true
+metadata only: table column headers, the sidebar email in its one-line footer.
+Never use it for sentences a user must actually read.
+
 ## Animation budget
 
 Community data is unambiguous: more than 2–3 animations per page reads as

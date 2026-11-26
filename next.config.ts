@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -8,5 +9,12 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@prisma/client', '.prisma/client'],
 };
+
+// Bindings (D1, AI, …) inside plain `next dev`: starts the wrangler proxy and
+// persists miniflare state to .wrangler/state so local data survives restarts.
+// No-op outside development.
+if (process.env.NODE_ENV === 'development') {
+  initOpenNextCloudflareForDev();
+}
 
 export default withNextIntl(nextConfig);

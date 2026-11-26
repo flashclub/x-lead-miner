@@ -207,7 +207,7 @@
     "tabEmpty": "No posts recorded for this term yet.",
     "colPost": "Post",
     "colScore": "Score",
-    "colTime": "Captured",
+    "colTime": "Post date",
     "sortTitle": "Toggle score sort order",
     "openOnX": "Open on X",
     "deleteLabel": "Delete this term and its history",
@@ -217,7 +217,10 @@
     "deleteGo": "Delete",
     "deleteKeep": "Cancel",
     "deleting": "Deleting…",
-    "deleteFailed": "Delete failed — try again."
+    "deleteFailed": "Delete failed — try again.",
+    "sortTimeTitle": "Toggle post-date sort order",
+    "backfillStatus": "Re-scoring {n} historical posts…",
+    "backfillFailed": "Some historical scores could not be computed — reload to retry."
   },
   "billing": {
     "title": "Billing",

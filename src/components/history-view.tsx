@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/cn';
@@ -30,13 +30,15 @@ export interface HistoryRun {
 }
 
 type SortDir = 'desc' | 'asc';
+type SortKey = 'score' | 'time';
 
 /**
  * History board: one tab per search term (newest first), and under each tab
- * the deduplicated posts that term has ever hit, sortable by score. Default
- * order is score desc — this is a lead queue, best leads on top. A term can
- * be deleted (tab ✕ → confirm), which removes its runs but never touches the
- * lifetime usage counters.
+ * the deduplicated posts that term has ever hit. Both the score and the post
+ * date columns sort (click toggles direction; the other metric breaks ties,
+ * descending). Default order is score desc — this is a lead queue, best leads
+ * on top. A term can be deleted (tab ✕ → confirm), which removes its runs but
+ * never touches the lifetime usage counters.
  */
 export function HistoryView({
   runs,
@@ -74,13 +76,96 @@ export function HistoryView({
     if (!activeQuery || !tabs.includes(activeQuery)) setActiveQuery(tabs[0]);
   }, [tabs, activeQuery]);
 
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'score', dir: 'desc' });
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
 
+  /**
+   * Backfill: runs stored before score-merging existed (or during the merge
+   * outage) carry score:null forever unless re-scored. One scoring attempt per
+   * run per page load — the missing posts go through /api/leads/score and the
+   * results are reported back through /api/history/scores (the same merge
+   * path the search flow uses). A failed run is not retried this page load.
+   */
+  const attemptedBackfillRef = useRef<Set<string>>(new Set());
+  const [backfillCount, setBackfillCount] = useState(0);
+  const [backfillFailed, setBackfillFailed] = useState(false);
+  useEffect(() => {
+    const targets = allRuns
+      .filter((run) => !attemptedBackfillRef.current.has(run.id))
+      .map((run) => ({ run, missing: run.posts.filter((post) => post.score === null) }))
+      .filter(({ missing }) => missing.length > 0);
+    if (targets.length === 0) return;
+    targets.forEach(({ run }) => attemptedBackfillRef.current.add(run.id));
+    void (async () => {
+      setBackfillCount(targets.reduce((sum, target) => sum + target.missing.length, 0));
+      let failed = false;
+      for (const { run, missing } of targets) {
+        try {
+          const scoreResponse = await fetch('/api/leads/score', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ texts: missing.map((post) => post.text), perItem: true }),
+          });
+          if (!scoreResponse.ok) throw new Error(`scoring failed (HTTP ${scoreResponse.status})`);
+          const data = (await scoreResponse.json()) as {
+            scores?: number[];
+            timesSec?: (number | null)[];
+          };
+          const scores = Array.isArray(data.scores) ? data.scores : [];
+          if (scores.length !== missing.length) throw new Error('score response length mismatch');
+          const report = await fetch('/api/history/scores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              runId: run.id,
+              scores: missing.map((post, index) => ({
+                id: post.id,
+                score: scores[index],
+                sec: Array.isArray(data.timesSec) ? data.timesSec[index] ?? null : null,
+              })),
+            }),
+          });
+          if (!report.ok) throw new Error(`merge failed (HTTP ${report.status})`);
+          setAllRuns((current) =>
+            current.map((stored) =>
+              stored.id !== run.id
+                ? stored
+                : {
+                    ...stored,
+                    posts: stored.posts.map((post) => {
+                      const index = missing.findIndex((m) => m.id === post.id);
+                      return index === -1
+                        ? post
+                        : {
+                            ...post,
+                            score: scores[index],
+                            sec: Array.isArray(data.timesSec) ? data.timesSec[index] ?? null : null,
+                          };
+                    }),
+                  },
+              ),
+            );
+        } catch {
+          failed = true;
+        }
+      }
+      setBackfillCount(0);
+      if (failed) setBackfillFailed(true);
+    })();
+  }, [allRuns]);
+
+  function toggleSort(key: SortKey) {
+    setSort((current) =>
+      current.key === key
+        ? { key, dir: current.dir === 'desc' ? 'asc' : 'desc' }
+        : { key, dir: 'desc' }
+    );
+  }
+
   // Dedupe by tweet id across runs of this term, keeping the highest score
-  // (ties keep the newest capture). Unscored posts sort last in both directions.
+  // (ties keep the newest capture). Unscored posts and missing dates sort last.
   const posts = useMemo(() => {
     const active = allRuns.filter((run) => run.query === activeQuery);
     const byId = new Map<string, HistoryPost>();
@@ -92,15 +177,26 @@ export function HistoryView({
         }
       }
     }
-    const direction = sortDir === 'desc' ? -1 : 1;
+    const direction = sort.dir === 'desc' ? -1 : 1;
     return [...byId.values()].sort((a, b) => {
-      const scoreA = a.score ?? -1;
-      const scoreB = b.score ?? -1;
-      if (scoreA !== scoreB) return (scoreA - scoreB) * direction;
-      // secondary: newest capture first
-      return (b.createdAtIso ?? '').localeCompare(a.createdAtIso ?? '');
+      const [primaryA, primaryB] =
+        sort.key === 'score'
+          ? [a.score ?? -1, b.score ?? -1]
+          : [a.createdAtIso ?? '', b.createdAtIso ?? ''];
+      if (primaryA !== primaryB) {
+        if (primaryA === '') return 1;
+        if (primaryB === '') return -1;
+        return (primaryA < primaryB ? -1 : 1) * direction;
+      }
+      // secondary: the other metric, always descending
+      const [secondaryA, secondaryB] =
+        sort.key === 'score' ? [a.createdAtIso ?? '', b.createdAtIso ?? ''] : [a.score ?? -1, b.score ?? -1];
+      if (secondaryA === secondaryB) return 0;
+      if (secondaryA === '') return 1;
+      if (secondaryB === '') return -1;
+      return (secondaryA < secondaryB ? -1 : 1) * -1;
     });
-  }, [allRuns, activeQuery, sortDir]);
+  }, [allRuns, activeQuery, sort]);
 
   async function confirmDelete() {
     if (!pendingDelete) return;
@@ -128,25 +224,29 @@ export function HistoryView({
   const postCountFor = (query: string) =>
     allRuns.filter((run) => run.query === query).reduce((sum, run) => sum + run.posts.length, 0);
 
-  function toggleSort() {
-    setSortDir((current) => (current === 'desc' ? 'asc' : 'desc'));
-  }
-
-  function capturedLabel(iso: string | undefined): string {
+  function postDateLabel(iso: string | undefined): string {
     if (!iso) return '–';
-    return new Date(iso).toLocaleString(locale, {
+    // locale conventions, year included ("Nov 26, 2026" / "2026年11月26日")
+    return new Date(iso).toLocaleDateString(locale, {
+      year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     });
   }
 
+  const arrow = (key: SortKey) =>
+    sort.key === key ? (sort.dir === 'desc' ? ' ↓' : ' ↑') : '';
+
   return (
     <div className="space-y-4">
-      <p className="font-mono text-sm text-text-subtle" role="status">
+      <p className="text-sm text-text-subtle" role="status">
         {t('usage', { searches: usage.searches, posts: usage.scored })}
       </p>
+
+      {backfillCount > 0 && (
+        <p className="text-sm text-text-subtle">{t('backfillStatus', { n: backfillCount })}</p>
+      )}
+      {backfillFailed && <p className="text-sm text-danger">{t('backfillFailed')}</p>}
 
       <div className="flex flex-wrap gap-2" role="tablist" aria-label={t('title')}>
         {tabs.map((query) => {
@@ -179,7 +279,7 @@ export function HistoryView({
                 aria-label={`${t('deleteLabel')}: ${query}`}
                 title={t('deleteLabel')}
                 onClick={() => setPendingDelete(query)}
-                className="px-2 py-1.5 text-xs text-text-subtle transition-colors hover:text-danger"
+                className="px-2 py-1.5 text-sm text-text-subtle transition-colors hover:text-danger"
               >
                 ✕
               </button>
@@ -188,7 +288,7 @@ export function HistoryView({
         })}
       </div>
 
-      {deleteFailed && <p className="text-xs text-danger">{t('deleteFailed')}</p>}
+      {deleteFailed && <p className="text-sm text-danger">{t('deleteFailed')}</p>}
 
       {posts.length === 0 ? (
         <Card>
@@ -203,42 +303,58 @@ export function HistoryView({
                 <th className="w-24 px-2 py-2.5 font-normal">
                   <button
                     type="button"
-                    onClick={toggleSort}
+                    onClick={() => toggleSort('score')}
                     title={t('sortTitle')}
                     aria-label={t('sortTitle')}
-                    className="font-normal text-text-subtle transition-colors hover:text-text"
+                    className="font-normal transition-colors hover:text-text"
                   >
-                    {t('colScore')} {sortDir === 'desc' ? '↓' : '↑'}
+                    {t('colScore')}
+                    {arrow('score')}
                   </button>
                 </th>
-                <th className="w-32 px-4 py-2.5 font-normal">{t('colTime')}</th>
+                <th className="w-36 px-4 py-2.5 font-normal">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort('time')}
+                    title={t('sortTimeTitle')}
+                    aria-label={t('sortTimeTitle')}
+                    className="font-normal transition-colors hover:text-text"
+                  >
+                    {t('colTime')}
+                    {arrow('time')}
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
               {posts.map((post) => (
                 <tr key={post.id} className="border-b border-border/60 align-top last:border-b-0">
                   <td className="px-4 py-3">
-                    <p className="leading-relaxed text-text">
-                      {post.handle && (
+                    {/* user info on its own line — never mixed into the tweet */}
+                    {post.handle && (
+                      <p className="text-sm text-text-muted">
                         <a
                           href={`https://x.com/${post.handle}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-mono text-xs text-text-muted hover:text-text"
+                          className="font-mono transition-colors hover:text-text"
                         >
-                          @{post.handle}{' '}
+                          @{post.handle}
                         </a>
-                      )}
-                      {post.text}
+                      </p>
+                    )}
+                    {/* tweet text with the open-on-X link attached to it */}
+                    <p className="mt-1 text-sm leading-relaxed text-text">
+                      {post.text}{' '}
+                      <a
+                        href={post.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="whitespace-nowrap text-accent transition-colors hover:underline"
+                      >
+                        {t('openOnX')} ↗
+                      </a>
                     </p>
-                    <a
-                      href={post.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-1 inline-block text-xs text-accent hover:underline"
-                    >
-                      {t('openOnX')} ↗
-                    </a>
                   </td>
                   <td className="px-2 py-3">
                     {post.score !== undefined && post.score !== null ? (
@@ -253,8 +369,8 @@ export function HistoryView({
                       <span className="font-mono text-sm text-text-subtle">–</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-text-subtle">
-                    {capturedLabel(post.createdAtIso)}
+                  <td className="px-4 py-3 text-sm text-text-muted">
+                    {postDateLabel(post.createdAtIso)}
                   </td>
                 </tr>
               ))}
@@ -279,7 +395,7 @@ export function HistoryView({
                 posts: postCountFor(pendingDelete),
               })}
             </p>
-            <p className="mt-2 text-xs text-text-subtle">{t('deleteCountersNote')}</p>
+            <p className="mt-2 text-sm text-text-subtle">{t('deleteCountersNote')}</p>
             <div className="mt-5 flex gap-2">
               <button
                 type="button"
