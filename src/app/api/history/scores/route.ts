@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { ANON_COOKIE, ANON_COOKIE_MAX_AGE, anonIdFrom, mergeRunScores } from '@/lib/user';
+import {
+  ANON_COOKIE,
+  ANON_COOKIE_MAX_AGE,
+  mergeRunScores,
+  resolveUserIdentityForRequest,
+} from '@/lib/user';
 
 const scoresSchema = z.object({
   runId: z.string().min(1),
@@ -22,8 +27,8 @@ const scoresSchema = z.object({
  * The search route records a run BEFORE async scoring happens (results must
  * render instantly), so the stored posts start unscored. The browser reports
  * the model scores here once they land; this merges them into the stored run
- * by post id. Ownership is checked against the anon cookie — a run is only
- * ever updated for the visitor it belongs to.
+ * by post id. Ownership is checked against the resolved identity — a run is
+ * only ever updated for the visitor/account it belongs to.
  */
 export async function POST(request: Request) {
   let body: unknown;
@@ -38,9 +43,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: issue?.message ?? 'Invalid request' }, { status: 400 });
   }
 
-  const anonId = anonIdFrom(request);
+  const identity = await resolveUserIdentityForRequest(request);
   const ok = await mergeRunScores(
-    anonId,
+    identity.user.id,
     parsed.data.runId,
     parsed.data.scores.map((entry) => ({
       id: entry.id,
@@ -53,7 +58,7 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(ANON_COOKIE, anonId, {
+  response.cookies.set(ANON_COOKIE, identity.anonId, {
     httpOnly: true,
     sameSite: 'lax',
     path: '/',

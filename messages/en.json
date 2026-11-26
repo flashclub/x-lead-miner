@@ -117,11 +117,13 @@
     "subtitle": "Choose a provider to continue.",
     "devButton": "Go to dashboard (dev bypass)",
     "github": "Sign in with GitHub",
-    "google": "Sign in with Google"
+    "google": "Sign in with Google",
+    "unconfigured": "Sign-in is not configured yet — add the OAuth client id/secret to the environment first."
   },
   "shell": {
     "signOut": "Sign out",
-    "devBypass": "dev auth bypass"
+    "devBypass": "dev auth bypass",
+    "signIn": "Sign in"
   },
   "nav": {
     "search": "Lead search",
@@ -157,7 +159,9 @@
     "daysAgo": "{n}d ago",
     "scoringTime": "model scoring took {sec}s",
     "scoringInProgress": "scoring…",
-    "scoreTimeTitle": "per-post scoring latency (seconds, 4 decimals)"
+    "scoreTimeTitle": "per-post scoring latency (seconds, 4 decimals)",
+    "quotaUsageAnon": "Collected {used}/{limit} posts",
+    "quotaUsage": "Collected {used} posts"
   },
   "history": {
     "title": "History",
@@ -212,5 +216,13 @@
     "onFree": "You are on this plan.",
     "popular": "popular",
     "back": "Back to dashboard"
+  },
+  "loginRequired": {
+    "title": "Free quota reached",
+    "body": "You've collected {used} leads in total — they're already saved in your history. Sign in to keep mining: your data syncs across devices, is never lost, and everything you have now is linked to your account automatically.",
+    "github": "Continue with GitHub",
+    "google": "Continue with Google",
+    "dismiss": "Not now — just view my data",
+    "unconfigured": "Sign-in is not configured yet (missing OAuth credentials) — the site keeps working, but mining stays paused."
   }
 }

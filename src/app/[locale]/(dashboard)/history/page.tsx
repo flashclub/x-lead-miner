@@ -1,17 +1,17 @@
-import { cookies } from 'next/headers';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Card } from '@/components/ui/card';
 import { HistoryView, type HistoryRun } from '@/components/history-view';
-import { ANON_COOKIE } from '@/lib/user';
+import { readUserIdentity } from '@/lib/user';
 import { getDb } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Per-user search history (anonymous cookie identity — see src/lib/user.ts).
- * Server component reads the runs; the tab/sort interactivity lives in
- * HistoryView. First-time visitors (no cookie / no rows) get an empty state
- * instead of a row — user rows are only created when a search is recorded.
+ * Per-user search history (anonymous cookie identity or account — see
+ * src/lib/user.ts). Server component reads the runs; the tab/sort
+ * interactivity lives in HistoryView. First-time visitors (no rows) get an
+ * empty state instead of a row — user rows are only created when a search is
+ * recorded.
  */
 export default async function HistoryPage({
   params,
@@ -22,8 +22,8 @@ export default async function HistoryPage({
   setRequestLocale(locale);
   const t = await getTranslations('history');
 
-  const anonId = (await cookies()).get(ANON_COOKIE)?.value;
-  if (!anonId) {
+  const identity = await readUserIdentity();
+  if (!identity) {
     return (
       <div>
         <h1 className="font-display text-2xl font-bold tracking-tight">{t('title')}</h1>
@@ -42,7 +42,7 @@ export default async function HistoryPage({
   try {
     const db = await getDb();
     const user = await db.user.findUnique({
-      where: { anonId },
+      where: { id: identity.user.id },
       include: { runs: { orderBy: { createdAt: 'desc' } } },
     });
     if (user) {

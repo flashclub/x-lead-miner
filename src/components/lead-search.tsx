@@ -4,9 +4,14 @@ import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { LoginRequiredModal } from '@/components/login-required-modal';
 import type { XPost } from '@/lib/x-api';
 
 type SearchType = 'Latest' | 'Top';
+
+/** Server-reported free-quota state. `limit` is null for signed-in users
+ *  (no cap until billing exists). */
+type Quota = { used: number; limit: number | null; loggedIn: boolean };
 
 const EXAMPLE_QUERIES = [
   '"anyone recommend" lang:en -filter:replies',
@@ -50,7 +55,18 @@ function reportScores(runId: string, batch: XPost[], scores: number[], timesSec?
   }).catch(() => {});
 }
 
-export function LeadSearch() {
+export function LeadSearch({
+  initialQuota = null,
+  initialGateOpen = false,
+  enabledProviders = [],
+}: {
+  /** Server-computed usage, pre-set when the visitor already hit the gate. */
+  initialQuota?: Quota | null;
+  /** True when the server already knows this visitor is over the free quota —
+   *  the modal opens on page load instead of waiting for a failed search. */
+  initialGateOpen?: boolean;
+  enabledProviders?: readonly string[];
+}) {
   const t = useTranslations('leadSearch');
   const [query, setQuery] = useState(EXAMPLE_QUERIES[0]);
   const [searchType, setSearchType] = useState<SearchType>('Latest');
@@ -62,6 +78,8 @@ export function LeadSearch() {
   const [hasSearched, setHasSearched] = useState(false);
   const [scoringSec, setScoringSec] = useState<string | null>(null);
   const [scoringPending, setScoringPending] = useState(false);
+  const [quota, setQuota] = useState<Quota | null>(initialQuota);
+  const [showLoginModal, setShowLoginModal] = useState(initialGateOpen);
   const searchSeqRef = useRef(0);
 
   // Results render immediately; scores stream in asynchronously per batch,
@@ -128,12 +146,20 @@ export function LeadSearch() {
       if (cursor) params.set('cursor', cursor);
       const response = await fetch(`/api/leads/search?${params.toString()}`);
       const data = (await response.json()) as
-        | { posts: XPost[]; nextCursor?: string }
-        | { error: string };
+        | { posts: XPost[]; nextCursor?: string; quota?: Quota }
+        | { error: string; code?: string; quota?: Quota };
       if (!response.ok || 'error' in data) {
+        if ('code' in data && data.code === 'login_required') {
+          // Forced free-quota gate: the server refused the search, the modal
+          // explains why and how to continue.
+          if (data.quota) setQuota(data.quota);
+          setShowLoginModal(true);
+          return;
+        }
         setError('error' in data ? data.error : `Search failed (HTTP ${response.status})`);
         return;
       }
+      if (data.quota) setQuota(data.quota);
       const fresh = data.posts;
       setPosts((current) => (append ? [...current, ...fresh] : fresh));
       setNextCursor(data.nextCursor);
@@ -209,6 +235,13 @@ export function LeadSearch() {
 
       {posts.length > 0 && (
         <div className="space-y-3" aria-live="polite">
+          {quota && (
+            <p className="font-mono text-sm text-text-subtle">
+              {quota.limit
+                ? t('quotaUsageAnon', { used: quota.used, limit: quota.limit })
+                : t('quotaUsage', { used: quota.used })}
+            </p>
+          )}
           {(scoringPending || scoringSec) && (
             <p className="font-mono text-sm text-text-subtle" role="status">
               {scoringPending
@@ -296,6 +329,13 @@ export function LeadSearch() {
           </Button>
         </div>
       )}
+
+      <LoginRequiredModal
+        open={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        used={quota?.used ?? 0}
+        enabledProviders={enabledProviders}
+      />
     </div>
   );
 }

@@ -117,11 +117,13 @@
     "subtitle": "选择登录方式继续。",
     "devButton": "直接进入仪表盘（开发免登录）",
     "github": "使用 GitHub 登录",
-    "google": "使用 Google 登录"
+    "google": "使用 Google 登录",
+    "unconfigured": "登录暂未配置——请先在环境变量中填入 OAuth 应用的 client id/secret。"
   },
   "shell": {
     "signOut": "退出登录",
-    "devBypass": "开发免登录"
+    "devBypass": "开发免登录",
+    "signIn": "登录"
   },
   "nav": {
     "search": "线索搜索",
@@ -157,7 +159,9 @@
     "daysAgo": "{n} 天前",
     "scoringTime": "模型打分耗时 {sec}s",
     "scoringInProgress": "模型打分中…",
-    "scoreTimeTitle": "单条打分耗时（秒，精确到小数点后 4 位）"
+    "scoreTimeTitle": "单条打分耗时（秒，精确到小数点后 4 位）",
+    "quotaUsageAnon": "已获取 {used}/{limit} 条",
+    "quotaUsage": "已获取 {used} 条"
   },
   "history": {
     "title": "历史记录",
@@ -212,5 +216,13 @@
     "onFree": "你正在此套餐。",
     "popular": "热门",
     "back": "返回仪表盘"
+  },
+  "loginRequired": {
+    "title": "免费额度已用完",
+    "body": "你已经累计获取了 {used} 条线索数据，它们已完整保存在你的历史记录里。登录之后可以继续挖掘新线索——数据跨设备同步、永远不会丢失，现有数据会自动关联到你的账号。",
+    "github": "使用 GitHub 继续",
+    "google": "使用 Google 继续",
+    "dismiss": "暂不登录，先看看已有数据",
+    "unconfigured": "登录暂未配置（缺少 OAuth 凭据）——网站可以继续浏览，但挖掘暂停。"
   }
 }

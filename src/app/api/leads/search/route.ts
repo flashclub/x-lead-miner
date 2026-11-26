@@ -5,8 +5,9 @@ import { XApiClient, XApiError, type XApiErrorKind, type XPost } from '@/lib/x-a
 import {
   ANON_COOKIE,
   ANON_COOKIE_MAX_AGE,
-  anonIdFrom,
+  FREE_POST_LIMIT,
   recordSearch,
+  resolveUserIdentityForRequest,
   type RecordedPost,
 } from '@/lib/user';
 
@@ -20,6 +21,11 @@ const searchParamsSchema = z.object({
  * GET /api/leads/search?query=...&searchType=Latest|Top&cursor=...
  * Server-side proxy so AIAPIKEY_KEY never reaches the browser.
  * Returns the normalized SearchPage from lib/x-api.ts.
+ *
+ * Identity + quota: anonymous visitors may collect up to FREE_POST_LIMIT
+ * scored posts; beyond that the route answers 403 `login_required` and the
+ * browser opens the sign-in modal. Logged-in users are not capped (billing
+ * comes later). Every response carries `quota` so the UI can show usage.
  */
 // Public demo: simple in-memory per-IP limiter protects the paid X data
 // quota (20 searches / hour / IP — enough for portfolio evaluation).
@@ -53,6 +59,18 @@ function serializePost(post: XPost): RecordedPost {
   };
 }
 
+/** Set the anon id cookie on a response (refreshes on every hit; a first-time
+ *  direct-API caller gets the id their data was recorded under). */
+function withAnonCookie(response: NextResponse, anonId: string): NextResponse {
+  response.cookies.set(ANON_COOKIE, anonId, {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: ANON_COOKIE_MAX_AGE,
+  });
+  return response;
+}
+
 export async function GET(request: Request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local';
   if (rateLimited(ip)) {
@@ -81,6 +99,26 @@ export async function GET(request: Request) {
     );
   }
 
+  const identity = await resolveUserIdentityForRequest(request);
+  const quota = {
+    used: identity.user.scoredCount,
+    limit: identity.loggedIn ? null : FREE_POST_LIMIT,
+    loggedIn: identity.loggedIn,
+  };
+
+  if (!identity.loggedIn && identity.user.scoredCount >= FREE_POST_LIMIT) {
+    // Forced gate: the browser opens the sign-in modal on `login_required`.
+    const response = NextResponse.json(
+      {
+        error: `Free quota reached (${FREE_POST_LIMIT} posts) — sign in to keep mining.`,
+        code: 'login_required',
+        quota,
+      },
+      { status: 403 }
+    );
+    return withAnonCookie(response, identity.anonId);
+  }
+
   const client = new XApiClient({ apiKey });
   try {
     const page = await client.search(parsed.data.query, {
@@ -88,18 +126,23 @@ export async function GET(request: Request) {
       cursor: parsed.data.cursor,
     });
     if (page.posts.length === 0) {
-      return NextResponse.json({ posts: [], nextCursor: page.nextCursor, prevCursor: page.prevCursor });
+      const response = NextResponse.json({
+        posts: [],
+        nextCursor: page.nextCursor,
+        prevCursor: page.prevCursor,
+        quota,
+      });
+      return withAnonCookie(response, identity.anonId);
     }
 
-    // History: mirror the run behind the anon cookie id (see src/lib/user.ts).
+    // History: mirror the run behind the resolved identity (see src/lib/user.ts).
     // Recording must never break the search response, and the model scores are
     // NOT known yet — they stream in after this returns and get merged into the
     // stored run via /api/history/scores (the client reports them with runId).
-    const anonId = anonIdFrom(request);
     let runId: string | undefined;
     try {
       const run = await recordSearch(
-        anonId,
+        identity.user,
         parsed.data.query,
         parsed.data.searchType,
         page.posts.map(serializePost)
@@ -119,16 +162,9 @@ export async function GET(request: Request) {
       nextCursor: page.nextCursor,
       prevCursor: page.prevCursor,
       runId,
+      quota,
     });
-    // First direct-API hit (no page load set the cookie): hand back the id this
-    // run was recorded under so later requests attribute to the same user.
-    response.cookies.set(ANON_COOKIE, anonId, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: ANON_COOKIE_MAX_AGE,
-    });
-    return response;
+    return withAnonCookie(response, identity.anonId);
   } catch (error) {
     if (error instanceof XApiError) {
       const messages: Record<XApiErrorKind, string> = {

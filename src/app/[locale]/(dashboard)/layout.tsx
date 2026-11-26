@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
+import { auth } from '@/auth';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { SidebarNav } from '@/components/sidebar-nav';
@@ -24,6 +25,8 @@ export default async function DashboardLayout({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('shell');
+  const session = await auth();
+  const email = session?.user?.email ?? null;
 
   return (
     <div className="min-h-screen md:flex">
@@ -38,7 +41,7 @@ export default async function DashboardLayout({
           </div>
         </div>
 
-        <SidebarNav />
+        <SidebarNav email={email} />
 
         <div className="hidden border-t border-border px-5 py-4 md:block">
           <div className="flex items-center gap-3">
