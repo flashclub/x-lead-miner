@@ -35,13 +35,31 @@ export default async function HistoryPage({
     );
   }
 
-  const db = await getDb();
-  const user = await db.user.findUnique({
-    where: { anonId },
-    include: { runs: { orderBy: { createdAt: 'desc' } } },
-  });
+  // A DB hiccup (e.g. migration not applied yet) must not 500 the page —
+  // degrade to the empty state like every other failure.
+  let runs: HistoryRun[] = [];
+  let usage = { searches: 0, scored: 0 };
+  try {
+    const db = await getDb();
+    const user = await db.user.findUnique({
+      where: { anonId },
+      include: { runs: { orderBy: { createdAt: 'desc' } } },
+    });
+    if (user) {
+      runs = user.runs.map((run) => ({
+        id: run.id,
+        query: run.query,
+        searchType: run.searchType,
+        capturedAtIso: run.createdAt.toISOString(),
+        posts: JSON.parse(run.results) as HistoryRun['posts'],
+      }));
+      usage = { searches: user.searchCount, scored: user.scoredCount };
+    }
+  } catch (error) {
+    console.warn('[history] read failed:', error instanceof Error ? error.message : error);
+  }
 
-  if (!user || user.runs.length === 0) {
+  if (runs.length === 0) {
     return (
       <div>
         <h1 className="font-display text-2xl font-bold tracking-tight">{t('title')}</h1>
@@ -53,24 +71,12 @@ export default async function HistoryPage({
     );
   }
 
-  const runs: HistoryRun[] = user.runs.map((run) => ({
-    id: run.id,
-    query: run.query,
-    searchType: run.searchType,
-    capturedAtIso: run.createdAt.toISOString(),
-    posts: JSON.parse(run.results) as HistoryRun['posts'],
-  }));
-
   return (
     <div>
       <h1 className="font-display text-2xl font-bold tracking-tight">{t('title')}</h1>
       <p className="mt-2 text-text-muted">{t('subtitle')}</p>
       <div className="mt-6">
-        <HistoryView
-          runs={runs}
-          usage={{ searches: user.searchCount, scored: user.scoredCount }}
-          locale={locale}
-        />
+        <HistoryView runs={runs} usage={usage} locale={locale} />
       </div>
     </div>
   );
